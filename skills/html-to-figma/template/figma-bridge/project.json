@@ -1,0 +1,30 @@
+{
+  "$doc": "Project config for the html-to-figma tools. Paths are relative to this file's folder (figma-bridge/).",
+  "name": "Website",
+  "siteDir": "../site",
+  "siteUrl": "http://127.0.0.1:4173/",
+  "frameSuffix": " — Desktop 1512",
+  "sections": {
+    "$doc": "JS expressions over `sec` (a DOM element), evaluated in the rendered page.",
+    "selector": "body > section[data-layout]",
+    "layout": "sec.dataset.layout",
+    "surface": "'default'"
+  },
+  "chrome": {
+    "$doc": "Header/Footer content used by components/90-chrome.js. Fill from the site's header and footer.",
+    "utility": ["Contact", "Search", "EN ▾"],
+    "nav": [{ "label": "Products", "menu": true }, { "label": "About", "menu": false }],
+    "cta": "Contact us",
+    "footer": {
+      "tagline": "One line about the company.",
+      "contact": ["Company Ltd.", "Street 1, City", "+00 000 000", "hello@example.com"],
+      "columns": [{ "title": "Products", "links": ["All products"] }, { "title": "Company", "links": ["About", "Contact"] }],
+      "legal": "© 2026 Company",
+      "legalLinks": ["Privacy policy", "Cookie policy"]
+    }
+  },
+  "$pagesDoc": "One entry per frame. Required: group, name, file. Optional: figmaPage, x, y, prepare (JS run in the page before extraction: UI state), header (Header variant props), sections (selector/layout override), chrome (true | \"header\" | false), height (fixed screen), device (\"mobile\"), drawer ({layout, width, side}). Several entries may share a file (wizard steps, tabs, mobile).",
+  "pages": [
+    { "group": "Main", "name": "Home", "file": "index.html" }
+  ]
+}

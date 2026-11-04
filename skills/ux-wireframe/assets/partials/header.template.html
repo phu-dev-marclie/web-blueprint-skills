@@ -1,0 +1,59 @@
+<!--
+  HEADER SKELETON — archetype-neutral. Copy to wireframe/_partials/header.html and
+  REDESIGN it from design-direction.md §Navigation model: what sits in the bar,
+  how the primary CTA reads, whether the header overlays a hero, how the
+  product/service menu opens. Its CSS is assets/sections/header.css (started from
+  assets/partials/header.css) — never base.css or components.css.
+  For archetype "commerce" start from assets/partials/commerce/ instead.
+
+  Bricks: Header template = Section .w-header (data-brx="section") > Container .w-header__container
+  (data-brx="container"; width and side padding come from the theme style) > elements w-header__…
+  Every element carries its own w- class (bem_lint.py --prefix w-); components keep only their own
+  class (Button: Primary = w-button-primary, data-component on the root, data-prop on each value
+  that changes per instance). Navigation lists are WordPress menus looped in Bricks
+  (li.w-header__item > a.w-header__link). Icons: <i data-icon="name" class="w-icon w-icon--small …">.
+
+  Keep the engine hooks: data-nav-toggle / data-nav-panel / data-nav-drill / data-nav-close,
+  data-menu-toggle + data-menu (dropdowns open on click, interactions-contract §10c).
+  Keep the data-chrome hooks (handoff.py → Figma Header component): brand, nav, utility, cta.
+  No review bar / page index above the header: the wireframe is navigated through its own
+  header and footer, exactly like the real site (qa.py rejects a `wf-bar`).
+-->
+
+<header class="w-header" data-brx="section">
+  <div class="w-header__container" data-brx="container">
+    <button class="w-header__nav-toggle" type="button" data-nav-toggle aria-expanded="false" aria-controls="mobile-menu">
+      <i data-icon="list" class="w-icon"></i> {{LABEL_MENU}}
+    </button>
+    <a class="w-header__brand" href="index.html" aria-label="{{BRAND}} — {{LABEL_HOME}}" data-chrome="brand">{{BRAND_MARK}}</a>
+    <nav class="w-header__nav" aria-label="{{LABEL_MAIN_NAV}}" data-chrome="nav">
+      <ul class="w-header__list">
+        {{NAV_ITEMS}}
+        <!-- plain item (WordPress menu "Main"):
+             <li class="w-header__item"><a class="w-header__link" href="about.html" data-nav="about">About</a></li>
+             item with children (the overview page stays reachable as the first link):
+             <li class="w-header__item">
+               <button class="w-header__link" type="button" data-menu-toggle aria-controls="menu-stays" aria-expanded="false" data-nav="stays">Stays <i data-icon="caret-down" class="w-icon w-icon--small w-header__toggle-icon"></i></button>
+               <div class="w-header__dropdown" id="menu-stays" data-menu hidden>
+                 <a class="w-header__dropdown-link" href="stays.html">All stays</a> …
+               </div>
+             </li> -->
+      </ul>
+    </nav>
+    <div class="w-header__utility" data-chrome="utility">{{UTILITY_ITEMS}}</div>   <!-- language switch, contact … -->
+    <a class="w-button-primary" href="{{CTA_URL}}" data-chrome="cta" data-component="Button: Primary" data-prop="label">{{CTA_LABEL}}</a>   <!-- the primary CTA from Business-information §7.4 -->
+  </div>
+</header>
+
+<div class="w-nav-panel" id="mobile-menu" data-nav-panel aria-label="{{LABEL_MENU}}">
+  <div class="w-nav-panel__head">
+    <strong class="w-nav-panel__title">{{LABEL_MENU}}</strong>
+    <button class="w-nav-panel__close" type="button" data-nav-close>{{LABEL_CLOSE}} <i data-icon="x" class="w-icon w-icon--small"></i></button>
+  </div>
+  <ul class="w-nav-panel__list">
+    {{MOBILE_ITEMS}}   <!-- same tree (WordPress menu "Main") —
+         <li class="w-nav-panel__item"><a class="w-nav-panel__link" href="…">Page</a></li>
+         nested: <li class="w-nav-panel__item"><a class="w-nav-panel__link" href="…" data-nav-drill>Parent <i data-icon="caret-right" class="w-icon w-icon--small w-nav-panel__icon"></i></a>
+         <ul class="w-nav-panel__sublist"><li class="w-nav-panel__subitem"><a class="w-nav-panel__sublink" href="…">Child</a></li></ul></li> -->
+  </ul>
+</div>

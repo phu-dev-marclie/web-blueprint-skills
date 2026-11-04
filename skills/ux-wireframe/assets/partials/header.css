@@ -1,0 +1,48 @@
+/* Section header — Bricks Header template (assets/sections/header.css; markup _partials/header.html).
+   Section .w-header > Container .w-header__container (width / side padding: theme style) > w-header__… elements;
+   the mobile panel .w-nav-panel follows the section. STARTER from the ux-wireframe skeleton: redesign it from
+   design-direction.md §Navigation model. Layout lives on the header's own classes (flex row for the bar);
+   components inside (w-button-primary …) keep their component look — a header-specific look is written here
+   as `.w-header .w-button-primary { … }`, nothing else crosses blocks.
+   The full nav folds into the menu button at ≤ 991 px (raise it to 1279 when the nav needs the room). */
+.w-header { position: sticky; top: 0; z-index: 50; background: var(--bg-body); border-bottom: var(--stroke); }
+.w-header__container { flex-direction: row; align-items: center; gap: var(--space-l); padding-block: var(--space-s); }
+.w-header__brand { font-weight: var(--font-weight-heading); font-size: var(--text-l); line-height: var(--line-height-xl); text-decoration: none; }
+.w-header__nav { margin-left: auto; }
+.w-header__list { display: flex; flex-wrap: wrap; gap: var(--space-m); margin: 0; padding: 0; list-style: none; }
+.w-header__item { position: relative; margin: 0; }
+.w-header__link { display: inline-flex; align-items: center; gap: var(--space-3xs); padding: 0; border: 0; background: none; color: inherit; font-family: var(--font-family); font-weight: var(--font-weight-strong); font-size: var(--text-s); line-height: var(--line-height-l); text-decoration: none; cursor: pointer; }
+.w-header__link.is-current { text-decoration: underline; }
+.w-header__toggle-icon { transition: transform .2s ease; }
+.w-header__link[aria-expanded="true"] .w-header__toggle-icon { transform: rotate(180deg); }
+/* dropdown panel (interactions-contract §10c): shown whenever the engine removes [hidden] */
+.w-header__dropdown { position: absolute; top: calc(100% + 8px); left: 0; z-index: 60; display: flex; flex-direction: column; gap: var(--space-xs); min-width: 240px; padding: var(--space-m); border: var(--stroke-strong); border-radius: var(--radius-l); background: var(--bg-surface); }
+.w-header__dropdown-link { font-size: var(--text-s); line-height: var(--line-height-l); text-decoration: none; }
+.w-header__utility { display: flex; gap: var(--space-s); font-size: var(--text-s); line-height: var(--line-height-l); }
+.w-header__nav-toggle { display: none; align-items: center; gap: var(--space-xs); padding: var(--space-xs) var(--space-s); border: var(--stroke-strong); border-radius: var(--radius-full); background: var(--bg-surface); color: var(--text-title); font-family: var(--font-family); font-weight: var(--font-weight-strong); font-size: var(--text-s); line-height: var(--line-height-l); cursor: pointer; }
+
+/* off-canvas mobile menu ([data-nav-panel]; the engine sets is-open on the panel and on drilled items) */
+.w-nav-panel { position: fixed; inset: 0 30% 0 0; z-index: 90; padding: var(--space-m); overflow-y: auto; background: var(--bg-body); border-right: var(--stroke-strong); transform: translateX(-102%); transition: transform .25s ease; }
+.w-nav-panel.is-open { transform: translateX(0); }
+.w-nav-panel.is-open::before { content: ""; position: fixed; inset: 0; z-index: -1; background: rgba(0, 0, 0, .35); }
+.w-nav-panel__head { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-s); }
+.w-nav-panel__close { display: inline-flex; align-items: center; gap: var(--space-xs); padding: var(--space-xs) var(--space-m); border: var(--stroke-strong); border-radius: var(--radius-full); background: transparent; color: var(--text-title); font-family: var(--font-family); font-weight: var(--font-weight-strong); font-size: var(--text-xs); line-height: var(--line-height-m); cursor: pointer; }
+.w-nav-panel__list { margin: 0; padding: 0; list-style: none; }
+.w-nav-panel__item { border-bottom: var(--stroke-subtle); }
+.w-nav-panel__link { display: flex; justify-content: space-between; align-items: center; padding: var(--space-s) var(--space-3xs); font-weight: var(--font-weight-strong); text-decoration: none; }
+.w-nav-panel__icon { transition: transform .2s ease; }
+.w-nav-panel__sublist { display: none; margin: 0; padding: 0 0 var(--space-s) var(--space-s); list-style: none; }
+.w-nav-panel__item.is-open > .w-nav-panel__sublist { display: block; }
+.w-nav-panel__item.is-open > .w-nav-panel__link .w-nav-panel__icon { transform: rotate(90deg); }
+.w-nav-panel__sublink { display: block; padding: var(--space-xs) 0; font-size: var(--text-s); line-height: var(--line-height-l); text-decoration: none; }
+
+@media (max-width: 991px) {
+  .w-header__nav, .w-header__utility { display: none; }
+  .w-header__nav-toggle { display: inline-flex; }
+}
+@media (max-width: 478px) {
+  .w-header__container { gap: var(--space-s); }
+}
+@media print {
+  .w-header { position: static; }
+}

@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "bricks://controls/radio",
+  "schemaVersion": "2.4",
+  "title": "Radio Control",
+  "description": "Unknown control type: radio",
+  "type": [
+    "string",
+    "object",
+    "array",
+    "boolean",
+    "number"
+  ],
+  "controlProperties": [
+    "type",
+    "options"
+  ]
+}

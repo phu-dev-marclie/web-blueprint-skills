@@ -1,0 +1,43 @@
+<!--
+  FOOTER SKELETON — archetype-neutral. Copy to wireframe/_partials/footer.html and
+  REDESIGN it from design-direction.md §Navigation model (closing CTA? sitemap
+  columns? trust line? legal?). Must link every top-level node of sitemap.md §1
+  plus legal pages and contact data. Its CSS is assets/sections/footer.css (started
+  from assets/partials/footer.css).
+  For archetype "commerce" start from assets/partials/commerce/ instead.
+
+  Bricks: Footer template = Section .w-footer (data-brx="section") > Container .w-footer__container
+  (data-brx="container") > elements w-footer__…; every element carries its own w- class. Each link
+  column and the legal links are one WordPress menu, looped in Bricks (li.w-footer__menu-item >
+  a.w-footer__menu-link; skill bricks-bem-html rule 9). The back-to-top button (w-to-top) follows it.
+
+  Keep the data-chrome hooks (handoff.py → Figma Footer component): tagline, contact
+  (one child element per line), footer-col (heading + links, one per column), legal,
+  legal-links.
+-->
+<footer class="w-footer" data-brx="section">
+  <div class="w-footer__container" data-brx="container">
+    <p class="w-footer__tagline" data-chrome="tagline">{{FOOTER_TAGLINE}}</p>
+    <address class="w-footer__contact" data-chrome="contact">{{CONTACT_LINES}}</address>   <!-- <span class="w-footer__contact-line">Street 1, City</span><a class="w-footer__contact-line" href="tel:…">…</a> -->
+    <nav class="w-footer__nav" aria-label="{{LABEL_FOOTER_NAV}}">
+      {{FOOTER_COLUMNS}}   <!-- <div class="w-footer__column" data-chrome="footer-col"><p class="w-footer__column-title">Group</p>
+           <ul class="w-footer__menu"><li class="w-footer__menu-item"><a class="w-footer__menu-link" href="…">Page</a></li>…</ul></div>,
+           mirroring the header groups -->
+    </nav>
+    <p class="w-footer__legal" data-chrome="legal">{{LEGAL_LINE}}</p>
+    <p class="w-footer__legal-links" data-chrome="legal-links">{{LEGAL_LINKS}}</p>   <!-- inline <a href> links in the paragraph -->
+  </div>
+</footer>
+
+<button class="w-to-top" type="button" data-to-top aria-label="{{LABEL_TO_TOP}}" hidden><i data-icon="arrow-up" class="w-icon"></i></button>
+
+<script>
+  // marks the current nav link from <body data-nav="...">
+  (function () {
+    var key = document.body.getAttribute('data-nav');
+    if (!key) return;
+    document.querySelectorAll('[data-nav="' + key + '"]').forEach(function (el) {
+      if (el !== document.body) el.classList.add('is-current');
+    });
+  })();
+</script>

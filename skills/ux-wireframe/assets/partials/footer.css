@@ -1,0 +1,29 @@
+/* Section footer — Bricks Footer template (assets/sections/footer.css; markup _partials/footer.html).
+   Section .w-footer > Container .w-footer__container (width / side padding: theme style) > w-footer__… elements;
+   the back-to-top button .w-to-top follows the section. STARTER from the ux-wireframe skeleton: redesign it from
+   design-direction.md §Navigation model. Grid for the columns (fractions on the parent), flex for inline runs. */
+.w-footer { margin-top: var(--space-4xl); padding-block: var(--space-2xl); border-top: var(--stroke-strong); font-size: var(--text-s); line-height: var(--line-height-l); }
+.w-footer__container { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); align-items: start; gap: var(--space-l) var(--layout-gutter); }
+.w-footer__tagline { grid-column: 1 / -1; margin: 0; font-size: var(--text-l); line-height: var(--line-height-xl); font-weight: var(--font-weight-heading); }
+.w-footer__contact { display: flex; flex-direction: column; gap: var(--space-3xs); font-style: normal; }
+.w-footer__contact-line { display: block; }
+.w-footer__nav { display: grid; grid-template-columns: var(--columns-3); gap: var(--space-l); }
+.w-footer__column { display: flex; flex-direction: column; gap: var(--space-xs); }
+.w-footer__column-title { margin: 0; font-weight: var(--font-weight-heading); color: var(--text-title); }
+.w-footer__menu { margin: 0; padding: 0; list-style: none; }
+.w-footer__menu-item { margin: 0 0 var(--space-3xs); }
+.w-footer__menu-link { text-decoration: none; }
+.w-footer__legal { margin: 0; color: var(--text-body-dark); }
+.w-footer__legal-links { margin: 0; display: flex; flex-wrap: wrap; gap: var(--space-m); }
+
+/* back to top ([data-to-top]; the engine shows it after one screen of scrolling) */
+.w-to-top { position: fixed; right: var(--space-m); bottom: var(--space-m); z-index: 60; display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; padding: 0; border: var(--stroke-strong); border-radius: var(--radius-full); background: var(--bg-surface); color: var(--text-title); cursor: pointer; }
+
+@media (max-width: 767px) {
+  .w-footer__container { grid-template-columns: minmax(0, 1fr); }
+  .w-footer__nav { grid-template-columns: var(--columns-2); }
+  .w-to-top { bottom: var(--space-3xl); }
+}
+@media (max-width: 478px) {
+  .w-footer__nav { grid-template-columns: minmax(0, 1fr); }
+}

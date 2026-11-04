@@ -1,0 +1,58 @@
+/* Section footer — Bricks Footer template of a commerce site (assets/sections/footer.css; markup
+   _partials/footer.html, started from assets/partials/commerce/footer.template.html).
+   Section .w-footer > Container .w-footer__container (width / side padding: theme style) > blocks w-footer__usp,
+   __news, __nav, __pay, __bottom; the back-to-top button .w-to-top follows the section. STARTER: redesign it from
+   design-direction.md §Navigation model. Grid for columns (fractions on the parent), flex for inline runs. */
+.w-footer { margin-top: var(--space-4xl); border-top: var(--stroke-strong); font-size: var(--text-s); line-height: var(--line-height-l); }
+.w-footer__eyebrow { margin: 0 0 var(--space-xs); }
+.w-footer__title { margin: 0; font-size: var(--text-xl); line-height: var(--line-height-m); }
+
+/* F1 USP strip */
+.w-footer__usp { padding-block: var(--space-xl); border-bottom: var(--stroke-subtle); }
+.w-footer__usp-list { display: grid; grid-template-columns: var(--columns-4); gap: var(--space-m); width: 100%; margin-top: var(--space-l); }
+
+/* F2 newsletter */
+.w-footer__news { display: grid; grid-template-columns: var(--columns-2); align-items: center; gap: var(--space-l) var(--layout-gutter); padding-block: var(--space-xl); border-bottom: var(--stroke-subtle); }
+.w-footer__news-lede { margin: var(--space-xs) 0 0; color: var(--surface-text-muted); }
+.w-footer__news-row { display: flex; gap: var(--space-s); }
+.w-footer__news-input { flex: 1; min-width: 0; padding: var(--space-s) var(--space-m); border: var(--stroke-strong); border-radius: var(--radius-full); background: var(--bg-surface); color: var(--text-title); font-family: inherit; font-size: var(--text-s); line-height: var(--line-height-l); }
+.w-footer .w-checkbox { margin: var(--space-s) 0 0; }
+
+/* F3 five-column nav */
+.w-footer__nav { display: grid; grid-template-columns: var(--columns-5); gap: var(--space-l); width: 100%; padding-block: var(--space-2xl); }
+.w-footer__column { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-xs); }
+.w-footer__column-title { margin: 0 0 var(--space-xs); font-size: var(--text-xs); line-height: var(--line-height-m); font-weight: var(--font-weight-heading); letter-spacing: .1em; text-transform: uppercase; }
+.w-footer__menu { margin: 0; padding: 0; list-style: none; }
+.w-footer__menu-item { margin: 0 0 var(--space-3xs); }
+.w-footer__menu-link { color: var(--text-title); font-size: var(--text-s); line-height: var(--line-height-l); text-decoration: none; }
+.w-footer__contact { margin: 0 0 var(--space-xs); padding: 0; list-style: none; }
+.w-footer__contact-item { margin: 0 0 var(--space-3xs); }
+.w-footer__contact-item--muted { color: var(--surface-text-muted); }
+.w-footer__contact-link { color: var(--text-title); text-decoration: none; }
+
+/* F4 payment / trust */
+.w-footer__pay { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-m); width: 100%; padding-block: var(--space-l); border-top: var(--stroke-subtle); color: var(--text-body-dark); font-size: var(--text-xs); line-height: var(--line-height-m); }
+.w-footer__pay-label { color: var(--text-title); }
+
+/* F5 legal bottom */
+.w-footer__bottom { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--space-m); width: 100%; padding-block: var(--space-l); border-top: var(--stroke-subtle); color: var(--text-body-dark); font-size: var(--text-xs); line-height: var(--line-height-m); }
+.w-footer__legal { margin: 0; }
+.w-footer__legal-links { display: flex; flex-wrap: wrap; gap: var(--space-m); margin: 0; padding: 0; list-style: none; }
+.w-footer__social { display: flex; gap: var(--space-s); }
+.w-footer__social-link { color: var(--text-title); }
+
+/* back to top ([data-to-top]; the engine shows it after one screen of scrolling) */
+.w-to-top { position: fixed; right: var(--space-m); bottom: var(--space-m); z-index: 60; display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; padding: 0; border: var(--stroke-strong); border-radius: var(--radius-full); background: var(--bg-surface); color: var(--text-title); cursor: pointer; }
+
+@media (max-width: 1279px) {
+  .w-footer__nav { grid-template-columns: var(--columns-3); }
+}
+@media (max-width: 767px) {
+  .w-footer__usp-list { grid-template-columns: var(--columns-2); }
+  .w-footer__news { grid-template-columns: minmax(0, 1fr); }
+  .w-to-top { bottom: var(--space-3xl); }
+}
+@media (max-width: 478px) {
+  .w-footer__usp-list, .w-footer__nav { grid-template-columns: minmax(0, 1fr); }
+  .w-footer__news-row { flex-wrap: wrap; }
+}

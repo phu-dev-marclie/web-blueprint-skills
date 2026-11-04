@@ -1,0 +1,14 @@
+{
+  "name": "HTML → Figma Bridge (local)",
+  "id": "html-to-figma-bridge-local",
+  "api": "1.0.0",
+  "main": "code.js",
+  "ui": "ui.html",
+  "editorType": ["figma"],
+  "documentAccess": "dynamic-page",
+  "networkAccess": {
+    "allowedDomains": ["none"],
+    "devAllowedDomains": ["http://localhost:3999"],
+    "reasoning": "Receives build scripts and image assets from a local agent server on this machine only."
+  }
+}

@@ -1,0 +1,145 @@
+<!--
+  HEADER TEMPLATE (commerce) — copy to wireframe/_partials/header.html, then replace every {{TOKEN}}.
+  Written LAST in the workflow, but must list EVERY nav link from sitemap.md.
+  No review bar / page index above the header: the wireframe is navigated through its own
+  header and footer, exactly like the real site (qa.py rejects a `wf-bar`).
+  Bricks: Header template = three sections (w-announce, w-utility, w-header), each Section > Container
+  (data-brx; width and side padding from the theme style) > elements of that section's block; the
+  mega panels (w-mega) sit inside the header, the mobile panel (w-nav-panel) after it.
+  Every element carries its own w- class (bem_lint.py --prefix w-); components keep only their
+  own class (data-component on the root, data-prop on each per-instance value). Menus are
+  WordPress menus looped in Bricks (li.…__item > a.…__link). CSS: assets/sections/header.css
+  (started from assets/partials/commerce/header.css); shared widgets (w-search-suggest, w-tag,
+  w-photo, w-button-*) live in assets/components.css.
+-->
+
+<!-- ===== G1 announcement bar — rotating USPs ===== -->
+<div class="w-announce" data-brx="section" aria-live="polite">
+  <div class="w-announce__container" data-brx="container">
+    <a class="w-announce__item" href="{{PAGE_SHIPPING}}"><strong class="w-announce__title">{{USP_1_TITLE}}</strong> <span class="w-announce__text">{{USP_1_TEXT}}</span></a>
+    <a class="w-announce__item" href="{{PAGE_RETURNS}}"><strong class="w-announce__title">{{USP_2_TITLE}}</strong> <span class="w-announce__text">{{USP_2_TEXT}}</span></a>
+    <a class="w-announce__item" href="{{PAGE_TERMS}}"><strong class="w-announce__title">{{USP_3_TITLE}}</strong> <span class="w-announce__text">{{USP_3_TEXT}}</span></a>
+    <a class="w-announce__item" href="{{PAGE_SERVICES}}"><strong class="w-announce__title">{{USP_4_TITLE}}</strong> <span class="w-announce__text">{{USP_4_TEXT}}</span></a>
+  </div>
+</div>
+
+<!-- ===== G2 utility bar — hidden at ≤ 991 px ===== -->
+<div class="w-utility" data-brx="section" data-chrome="utility">
+  <div class="w-utility__container" data-brx="container">
+    <div class="w-utility__contact" data-brx="div">
+      <a class="w-utility__link" href="tel:{{PHONE_E164}}"><strong>{{PHONE_DISPLAY}}</strong></a>
+      <a class="w-utility__link" href="{{PAGE_CONTACT}}#mapa">{{SHOWROOM_LINE}}</a>
+      <a class="w-utility__link" href="{{PAGE_CONTACT}}">{{HOURS_LINE}}</a>
+    </div>
+    <ul class="w-utility__menu">
+      {{UTILITY_LINKS}}   <!-- WordPress menu "Utility": about, services, blog, cases, downloads, contact —
+           <li class="w-utility__menu-item"><a class="w-utility__menu-link" href="…">About</a></li> -->
+      <li class="w-utility__menu-item"><a class="w-utility__menu-link" href="{{PAGE_CONTACT}}" data-chrome="cta"><strong>{{CTA_CONSULT}}</strong></a></li>
+    </ul>
+  </div>
+</div>
+
+<!-- ===== G3 main header + G4 mega nav ===== -->
+<header class="w-header" data-brx="section">
+  <div class="w-header__container" data-brx="container">
+    <div class="w-header__bar" data-brx="div">
+      <button class="w-header__nav-toggle" type="button" data-nav-toggle aria-expanded="false" aria-controls="mobile-menu">
+        <i data-icon="list" class="w-icon"></i> {{LABEL_MENU}}
+      </button>
+
+      <a class="w-header__brand" data-chrome="brand" href="index.html" aria-label="{{BRAND}} — {{LABEL_HOME}}">
+        <span class="w-photo w-photo--logo w-header__logo">LOGO</span>
+        <span class="w-header__brand-text">
+          <span class="w-header__brand-mark">{{BRAND_UPPER}}</span>
+          <span class="w-header__brand-tagline">{{BRAND_TAGLINE}}</span>
+        </span>
+      </a>
+
+      <div class="w-header__search" data-search>
+        <form class="w-header__search-form" action="{{PAGE_SEARCH}}" role="search">
+          <input class="w-header__search-input" type="search" name="q" aria-label="{{LABEL_SEARCH}}" placeholder="{{SEARCH_PLACEHOLDER}}" autocomplete="off">
+          <button class="w-header__search-button" type="submit">{{LABEL_SEARCH_BTN}}</button>
+        </form>
+        <div class="w-search-suggest" data-search-suggest hidden>
+          <!-- items: <li class="w-search-suggest__item"><a class="w-search-suggest__link" href="…">…</a></li> -->
+          <p class="w-search-suggest__title">{{LABEL_POPULAR}}</p>
+          <ul class="w-search-suggest__list">{{SEARCH_POPULAR_ITEMS}}</ul>
+          <p class="w-search-suggest__title">{{LABEL_CATEGORIES}}</p>
+          <ul class="w-search-suggest__list">{{SEARCH_CATEGORY_ITEMS}}</ul>
+          <p class="w-search-suggest__title">{{LABEL_PRODUCTS}}</p>
+          <ul class="w-search-suggest__list">{{SEARCH_PRODUCT_ITEMS}}</ul>
+        </div>
+      </div>
+
+      <div class="w-header__actions" data-brx="div">
+        <a class="w-header__action" href="{{PAGE_FAVOURITES}}"><i data-icon="heart" class="w-icon"></i><span class="w-header__action-label">{{LABEL_FAV}}</span><span class="w-header__action-badge" data-fav-count>0</span></a>
+        <a class="w-header__action" href="{{PAGE_LOGIN}}"><i data-icon="user" class="w-icon"></i><span class="w-header__action-label">{{LABEL_LOGIN}}</span></a>
+        <a class="w-header__action" href="{{PAGE_CART}}"><i data-icon="shopping-bag" class="w-icon"></i><span class="w-header__action-label">{{LABEL_CART}}</span><span class="w-header__action-badge" data-cart-items>0</span></a>
+      </div>
+    </div>
+
+    <nav class="w-header__nav" data-chrome="nav" aria-label="{{LABEL_MAIN_NAV}}">
+      <ul class="w-header__list">
+        <!-- Mega dropdown (engine data-menu-toggle/data-menu; opens on click, Escape/outside click closes).
+             w-header__item--mega lets the panel span the whole container. Unique id per menu: menu-<key>.
+             The panel's first link (w-mega__overview) goes to the hub page so it stays reachable. -->
+        <li class="w-header__item w-header__item--mega" data-nav="{{NAV_KEY_1}}">
+          <button class="w-header__link" type="button" data-menu-toggle aria-controls="menu-{{NAV_KEY_1}}" aria-expanded="false">{{NAV_LABEL_1}} <i data-icon="caret-down" class="w-icon w-icon--small w-header__toggle-icon"></i></button>
+          <div class="w-mega" id="menu-{{NAV_KEY_1}}" data-menu hidden>
+            <a class="w-mega__overview" href="{{PAGE_HUB}}">{{LABEL_SHOW_ALL}} {{NAV_LABEL_1}}&nbsp;<i data-icon="arrow-right" class="w-icon w-icon--small"></i></a>
+            <div class="w-mega__columns">
+              <div class="w-mega__column">
+                <p class="w-mega__heading"><a class="w-mega__heading-link" href="{{SUBHUB_1_URL}}">{{SUBHUB_1_LABEL}}</a></p>
+                <ul class="w-mega__list">{{SUBHUB_1_ITEMS}}</ul>          <!-- <li class="w-mega__item"><a class="w-mega__link" href="…">Label <span class="w-mega__count">238</span></a></li> -->
+                <a class="w-mega__all" href="{{SUBHUB_1_URL}}">{{LABEL_SHOW_ALL}}&nbsp;<i data-icon="arrow-right" class="w-icon w-icon--small"></i></a>
+              </div>
+              <div class="w-mega__column">
+                <p class="w-mega__heading"><a class="w-mega__heading-link" href="{{SUBHUB_2_URL}}">{{SUBHUB_2_LABEL}}</a></p>
+                <ul class="w-mega__list">{{SUBHUB_2_ITEMS}}</ul>
+                <a class="w-mega__all" href="{{SUBHUB_2_URL}}">{{LABEL_SHOW_ALL}}&nbsp;<i data-icon="arrow-right" class="w-icon w-icon--small"></i></a>
+              </div>
+              <div class="w-mega__column">
+                <p class="w-mega__heading"><a class="w-mega__heading-link" href="{{SUBHUB_3_URL}}">{{SUBHUB_3_LABEL}}</a></p>
+                <ul class="w-mega__list">{{SUBHUB_3_ITEMS}}</ul>
+                <a class="w-mega__all" href="{{SUBHUB_3_URL}}">{{LABEL_SHOW_ALL}}&nbsp;<i data-icon="arrow-right" class="w-icon w-icon--small"></i></a>
+              </div>
+              <div class="w-mega__promo">
+                <span class="w-tag w-tag--solid">{{PROMO_TAG}}</span>
+                <div class="w-photo w-photo--4x3 w-mega__promo-photo">{{PROMO_IMAGE_LABEL}}</div>
+                <strong class="w-mega__promo-title">{{PROMO_TITLE}}</strong>
+                <p class="w-mega__promo-text">{{PROMO_TEXT}}</p>
+                <a class="w-button-primary w-button-primary--small w-button-primary--block" href="{{PROMO_CTA_URL}}" data-component="Button: Primary" data-prop="label">{{PROMO_CTA}}</a>
+              </div>
+            </div>
+          </div>
+        </li>
+
+        <!-- Repeat the item above for each additional mega menu, then plain items (WordPress menu "Main"):
+             <li class="w-header__item" data-nav="key"><a class="w-header__link" href="page.html">Label</a></li> -->
+        {{PLAIN_NAV_ITEMS}}
+
+        <li class="w-header__item w-header__item--end" data-nav="{{NAV_KEY_SALE}}"><a class="w-header__link" href="{{PAGE_SALE}}"><span class="w-header__hot">{{LABEL_SALE}}</span></a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<!-- ===== Mobile off-canvas menu — mirrors the full nav tree ===== -->
+<div class="w-nav-panel" id="mobile-menu" data-nav-panel aria-label="{{LABEL_MENU}}">
+  <div class="w-nav-panel__head">
+    <strong class="w-nav-panel__title">{{LABEL_MENU}}</strong>
+    <button class="w-nav-panel__close" type="button" data-nav-close>{{LABEL_CLOSE}} <i data-icon="x" class="w-icon w-icon--small"></i></button>
+  </div>
+  <ul class="w-nav-panel__list">
+    <li class="w-nav-panel__item">
+      <a class="w-nav-panel__link" href="{{PAGE_HUB}}" data-nav-drill>{{NAV_LABEL_1}} <i data-icon="caret-right" class="w-icon w-icon--small w-nav-panel__icon"></i></a>
+      <ul class="w-nav-panel__sublist">{{MOBILE_SUBITEMS_1}}</ul>   <!-- <li class="w-nav-panel__subitem"><a class="w-nav-panel__sublink" href="…">…</a></li> -->
+    </li>
+    {{MOBILE_PLAIN_ITEMS}}   <!-- <li class="w-nav-panel__item"><a class="w-nav-panel__link" href="…">…</a></li> -->
+  </ul>
+  <div class="w-nav-panel__actions">
+    <a class="w-button-secondary w-button-secondary--small" href="{{PAGE_LOGIN}}" data-component="Button: Secondary" data-prop="label">{{LABEL_LOGIN}}</a>
+    <a class="w-button-secondary w-button-secondary--small" href="{{PAGE_FAVOURITES}}" data-component="Button: Secondary" data-prop="label">{{LABEL_FAV}}</a>
+    <a class="w-button-primary w-button-primary--small" href="tel:{{PHONE_E164}}" data-component="Button: Primary" data-prop="label">{{PHONE_DISPLAY}}</a>
+  </div>
+</div>
