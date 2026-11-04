@@ -23,23 +23,32 @@ function need(name) {
   if (!v) throw new Error("missing variable " + name);
   return v;
 }
-// Solid paint bound to a colour variable (semantic token name, e.g. "text/default").
+// Solid paint bound to a colour variable (a Bricks token name, e.g. "text-title", "btn-bg", "inverse/btn-bg").
 function solid(token) {
   return figma.variables.setBoundVariableForPaint({ type: "SOLID", color: { r: 0, g: 0, b: 0 } }, "color", need(token));
 }
-// Spacing values must be 0 or one of the space/* tokens; anything else throws so off-grid values never slip in.
+// Spacing values are 0, a token name ("space-m") or px. Px resolve to the Bricks spacing token with that value
+// (space-*), else layout-gutter / figma/margin, else a 4px literal (figma/px-N); anything else throws so off-grid
+// values never slip in.
+const SPACE_BY_PX = new Map();
+for (const name of [...Object.keys(TOKENS.space || {}), "layout-gutter", "figma/margin", ...(TOKENS.spaceLiterals || []).map((n) => "figma/px-" + n)]) {
+  const v = V[name];
+  const px = v && v.valuesByMode[Object.keys(v.valuesByMode)[0]];
+  if (v && !SPACE_BY_PX.has(px)) SPACE_BY_PX.set(px, v);
+}
 function bindSpace(node, field, value) {
   if (value === undefined || value === null) return;
   if (value === 0) {
     node[field] = 0;
     return;
   }
-  const v = V["space/" + value];
-  if (!v) throw new Error("no spacing token " + value + " for " + node.name + "." + field);
+  const v = typeof value === "string" ? need(value) : SPACE_BY_PX.get(value);
+  if (!v) throw new Error("no spacing token " + value + " for " + node.name + "." + field + " (tokens.json → space / spaceLiterals)");
   node.setBoundVariable(field, v);
 }
+// r: "radius-m" or its step ("m", "full").
 function bindRadius(node, r) {
-  const v = need("radius/" + r);
+  const v = need(String(r).startsWith("radius-") ? r : "radius-" + r);
   for (const f of ["topLeftRadius", "topRightRadius", "bottomLeftRadius", "bottomRightRadius"]) node.setBoundVariable(f, v);
 }
 // s: {color, sides: ["top"|"right"|"bottom"|"left"], w, dash}
@@ -61,9 +70,9 @@ function stroke(node, s) {
 
 // Sizing is deferred and applied top-down by finalize(), so FILL children never sit in HUG parents mid-build.
 const SIZE = new Map();
-// Fixed widths that equal a column span are bound to layout/col-N, so they stay on the grid when the grid changes.
+// Fixed widths that equal a column span are bound to figma/col-N, so they stay on the grid when the grid changes.
 const SPAN_VAR = new Map();
-for (let n = 1; n <= TOKENS.grid.columns; n++) SPAN_VAR.set(n * TOKENS.grid.column + (n - 1) * TOKENS.grid.gutter, "layout/col-" + n);
+for (let n = 1; n <= TOKENS.grid.columns; n++) SPAN_VAR.set(n * TOKENS.grid.column + (n - 1) * TOKENS.grid.gutter, "figma/col-" + n);
 function applySize(node, s) {
   const isText = node.type === "TEXT";
   if (s.w === "fill") node.layoutSizingHorizontal = "FILL";
@@ -141,12 +150,12 @@ async function text(name, style, chars, o = {}) {
   if (!TS[style]) throw new Error("missing text style " + style);
   await t.setTextStyleIdAsync(TS[style].id);
   t.characters = chars;
-  t.fills = [solid(o.color || "text/default")];
+  t.fills = [solid(o.color || "text-body")];
   if (o.align) t.textAlignHorizontal = o.align;
   if (o.link) {
     const i = chars.indexOf(o.link);
     if (i >= 0) {
-      t.setRangeFills(i, i + o.link.length, [solid("text/link")]);
+      t.setRangeFills(i, i + o.link.length, [solid("surface-link")]);
       t.setRangeTextDecoration(i, i + o.link.length, "UNDERLINE");
     }
   }

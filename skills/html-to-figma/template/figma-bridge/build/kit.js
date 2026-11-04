@@ -13,49 +13,60 @@ const CONTAINER = GRID.columns * GRID.column + (GRID.columns - 1) * GRID.gutter;
 // Width of n columns including the gutters between them: span(4) = 4 × column + 3 × gutter.
 const span = (n) => n * GRID.column + (n - 1) * GRID.gutter;
 
-// ---------- surfaces
-const SURFACE_FILL = TOKENS.surfaces;
-const onDark = (env) => (TOKENS.darkSurfaces || []).includes(env && env.surface);
-// Pick a light-surface or dark-surface token for the current section.
-const ink = (env, light, dark) => (onDark(env) ? dark : light);
+// ---------- surfaces (tokens.json → surfaces, the site's [data-surface] keys)
+// A surface sets its background Theme role and may re-point tokens ("inverse/btn-bg"), exactly like Bricks
+// [data-surface="inverse"] { --btn-bg: … }. tok() reads a token through the current surface.
+const SURFACES = TOKENS.surfaces;
+const surfaceOf = (env) => (env && env.surface) || "default";
+const surfaceFill = (surface) => (SURFACES[surface] || SURFACES.default).fill;
+const onDark = (env) => !!(SURFACES[surfaceOf(env)] || {}).dark;
+const tok = (env, token) => (V[surfaceOf(env) + "/" + token] ? surfaceOf(env) + "/" + token : token);
+// Token for the current section: `dark` on a dark surface when given (e.g. text-title → text-contrast), else the
+// surface's re-pointed value of `light`, else `light`.
+const ink = (env, light, dark) => (onDark(env) && dark ? dark : tok(env, light));
+// Theme=Dark component variants read the tokens of the first dark surface (usually "inverse").
+const DARK_SURFACE = Object.keys(SURFACES).find((k) => SURFACES[k].dark) || "inverse";
+const themed = (theme, token) => (theme === "Dark" ? tok({ surface: DARK_SURFACE }, token) : token);
 
 // Section = full-width band (surface fill) holding one container of CONTAINER width.
-// Rhythm (tokens.json → section): padY above/below; two plain (default-surface) sections in a row are separated
-// by a hairline on the container plus padY inside it, when ruleBetweenPlain is true.
+// Rhythm (tokens.json → section): padY (= --layout-section-pad, bound to that variable) above/below; two plain
+// (default-surface) sections in a row are separated by a hairline on the container plus padY inside it, when
+// ruleBetweenPlain is true.
 // o: {dir, gap, main, cross, surface, padTop, padBottom, firstTop, sectionGap, bleedBefore:[nodes]}; bleed: nodes after the container (full width).
 async function section(name, env, o, kids, bleed = []) {
   const R = TOKENS.section || { padY: 128, ruleBetweenPlain: false };
+  const PAD = V["layout-section-pad"] ? "layout-section-pad" : R.padY;
   const surface = o.surface || env.surface || "default";
   const coloured = surface !== "default";
   let secTop = 0;
   let conTop = 0;
   let rule = false;
   if (o.padTop !== undefined) secTop = o.padTop;
-  else if (coloured) secTop = R.padY;
+  else if (coloured) secTop = PAD;
   else if (env.first) secTop = o.firstTop ?? 0;
-  else if (env.prevSurface && env.prevSurface !== "default") secTop = R.padY;
+  else if (env.prevSurface && env.prevSurface !== "default") secTop = PAD;
   else if (R.ruleBetweenPlain) {
-    conTop = R.padY;
+    conTop = PAD;
     rule = true;
-  } else secTop = R.padY;
+  } else secTop = PAD;
   const container = frame("Container", {
-    w: CONTAINER, wVar: "layout/container", dir: o.dir, gap: o.gap, main: o.main, cross: o.cross,
-    p: [conTop, 0, 0, 0], stroke: rule ? { color: "border/subtle", sides: ["top"] } : undefined,
+    w: CONTAINER, wVar: "figma/container", dir: o.dir, gap: o.gap, main: o.main, cross: o.cross,
+    p: [conTop, 0, 0, 0], stroke: rule ? { color: "border-subtle", sides: ["top"] } : undefined,
   }, kids);
-  return frame(name, { cross: "center", w: "fill", fill: SURFACE_FILL[surface] || SURFACE_FILL.default, p: [secTop, 0, o.padBottom ?? R.padY, 0], gap: o.sectionGap }, [...(o.bleedBefore || []), container, ...bleed]);
+  return frame(name, { cross: "center", w: "fill", fill: surfaceFill(surface), p: [secTop, 0, o.padBottom ?? PAD, 0], gap: o.sectionGap }, [...(o.bleedBefore || []), container, ...bleed]);
 }
 
 // ---------- common pieces
-const eyebrow = (s, env = {}) => text("Eyebrow", "Label/Eyebrow", s, { color: ink(env, "text/muted", "text/on-dark-muted") });
+const eyebrow = (s, env = {}) => text("Eyebrow", "Label/Eyebrow", s, { color: ink(env, "text-eyebrow") });
 const btn = (label, values = {}, o = {}) => inst(variant(C["Button"], { Type: "Primary", Size: "Large", Theme: "Light", State: "Default", ...values }), { Label: label }, { name: label, ...o });
 const arrowLink = (label, o = {}) => inst(C["Link/Arrow"], { Label: label }, { name: label, ...o });
 
 // Eyebrow + title + lede stack. d: {eyebrow, title, lede}; o: {name, gap, w, titleStyle, titleW, ledeStyle, ledeW}
 function headingBlock(d, env, o = {}) {
-  const title = () => text("Title", o.titleStyle || "Heading/H2", d.title, { color: ink(env, V["text/heading"] ? "text/heading" : "text/default", "text/on-dark"), w: o.titleW ?? "fill" });
+  const title = () => text("Title", o.titleStyle || "Heading/H2", d.title, { color: ink(env, "text-title", "text-contrast"), w: o.titleW ?? "fill" });
   return frame(o.name || "Heading", { gap: o.gap ?? 16, w: o.w ?? "fill" }, [
     d.eyebrow ? frame("Title group", { gap: 8, w: "fill" }, [eyebrow(d.eyebrow, env), title()]) : title(),
-    d.lede ? text("Lede", o.ledeStyle || "Body/LG", d.lede, { color: ink(env, "text/default", "text/on-dark-muted"), w: o.ledeW ?? "fill" }) : null,
+    d.lede ? text("Lede", o.ledeStyle || "Body/LG", d.lede, { color: ink(env, "lede-fg"), w: o.ledeW ?? "fill" }) : null,
   ]);
 }
 
@@ -66,7 +77,7 @@ async function media(name, m, o = {}) {
   const i = await inst(C["Image/Placeholder"], { Caption: (m && (m.caption || m.alt)) || "Image", "Show caption": !(m && m.img) }, { name: "Image · " + name, w: o.w, h: o.h, grow: o.grow });
   if (m && m.img) {
     const fit = o.fit === "contain";
-    i.fills = fit ? [solid("bg/surface"), await imagePaint(m.img, "FIT")] : [await imagePaint(m.img)];
+    i.fills = fit ? [solid("bg-surface"), await imagePaint(m.img, "FIT")] : [await imagePaint(m.img)];
     i.strokes = [];
   }
   if (o.r) bindRadius(i, o.r);
@@ -106,7 +117,7 @@ function variantSet(variants, o) {
     set.resize(o.w || 1000, set.height);
     set.counterAxisSizingMode = "AUTO";
   }
-  set.fills = [o.fill || solid("bg/surface")];
+  set.fills = [o.fill || solid("bg-surface")];
   if (o.description) set.description = o.description;
   return set;
 }
@@ -168,21 +179,21 @@ async function btnIcon(label, iconKey, values = {}, o = {}) {
 const MOBILE = TOKENS.gridMobile || { page: 440, columns: 4, gutter: 16, margin: 16 };
 function msection(name, env, o, kids) {
   const surface = o.surface || env.surface || "default";
-  return frame(name, { w: "fill", dir: o.dir, gap: o.gap, main: o.main, cross: o.cross, fill: SURFACE_FILL[surface] || SURFACE_FILL.default, p: [o.padTop ?? 48, MOBILE.margin, o.padBottom ?? 48, MOBILE.margin] }, kids);
+  return frame(name, { w: "fill", dir: o.dir, gap: o.gap, main: o.main, cross: o.cross, fill: surfaceFill(surface), p: [o.padTop ?? 48, MOBILE.margin, o.padBottom ?? 48, MOBILE.margin] }, kids);
 }
 // Photo with content on top (hero bands, tiles): auto-layout frame "Image · <name>" whose FILL is the photo (cover),
-// optionally under a scrim (o.scrim: colour token, e.g. "bg/image-scrim"); kids sit on the photo. Without a photo the
-// frame shows image/placeholder. Designers swap the photo like any image: select → Fill → image.
+// optionally under a scrim (o.scrim: colour token, e.g. "all-dark-40"); kids sit on the photo. Without a photo the
+// frame shows photo-bg. Designers swap the photo like any image: select → Fill → image.
 // o: frame options (dir, gap, p, main, cross, w, h, grow, r) + scrim + clip (default true) + fit ("contain" → FIT).
 async function overlay(name, m, o = {}, kids = []) {
   const { scrim, fit, ...fo } = o;
-  const f = await frame("Image · " + name, { ...fo, clip: o.clip ?? true, fill: "image/placeholder" }, kids);
+  const f = await frame("Image · " + name, { ...fo, clip: o.clip ?? true, fill: "photo-bg" }, kids);
   if (m && m.img) f.fills = [await imagePaint(m.img, fit === "contain" ? "FIT" : "FILL"), ...(scrim ? [solid(scrim)] : [])];
   f.setPluginData("media", "overlay");
   return f;
 }
 // Effect / gradient styles from tokens.json → effects / gradients (build/foundations.js):
-// await elevate(node, "Shadow/Card"); await gradient(node, "Gradient/Brand").
+// await elevate(node, "shadow-m"); await gradient(node, "gradient-brand").
 async function elevate(node, styleName) {
   const s = (await figma.getLocalEffectStylesAsync()).find((x) => x.name === styleName);
   if (!s) throw new Error("no effect style " + styleName + " (tokens.json → effects, then run build/foundations.js)");

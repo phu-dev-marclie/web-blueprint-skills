@@ -13,7 +13,9 @@
 | Glyph boxes for Arabic/CJK text | Inter/most Latin fonts lack those scripts | Add twin text styles (e.g. `Heading/H3 · Han` with Noto Sans SC) and use them for those strings |
 | Row height 1px off the grid | Baseline alignment across two font families | Pin the row height to its 4px value |
 | Font switch breaks styles ("missing font") | New family lacks a style name ("Semi Bold" vs "SemiBold") | Check `listAvailableFontsAsync`; adjust `tokens.json → type` styles; re-run foundations |
-| Text style shows Inter after changing `font/heading` | Style not bound (created before binding existed) | Re-run `foundations.js` (binds every style by role) |
+| Text style shows Inter after changing `font-family-display` | Style not bound (created before binding existed) | Re-run `foundations.js` (binds every style's family and `text-*` size) |
+| `missing variable text/default` (or `space/16`, `bg/page` …) | Project modules / tokens.json from before the Bricks naming | Port them to the template names (`text-title`, `space-m` or px, `bg-body`); `init_project --upgrade` refuses old tokens.json |
+| `no spacing token 22.6` | A Bricks length off the 4px grid passed straight to `gap` / `p` | Pass the token name (`"space-l"`) or the snapped px from tokens.json |
 | Instances vanished / "orphanInstances" > 0 after a rebuild | A component was deleted and recreated | Only `H.buildComponents` (swap first). To repair: swap orphans to the current component by name |
 | A component disappeared from the Components page but instances still render | Node removed from the tree (parent null) while referenced | `getNodeByIdAsync(id)` still returns it: re-insert into the Components page before rebuilding |
 | `vectorNetwork` errors (`getVectorNetworkAsync is not a function`) | Async getter not in this API version | Read `node.vectorNetwork`, write `setVectorNetworkAsync()` |

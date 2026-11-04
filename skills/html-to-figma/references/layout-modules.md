@@ -23,7 +23,9 @@ BUILD_MOBILE["<layout>"] = async (data, env) => msection("<Readable name>", env,
   layouts need → `build/project-kit.js` (owner: the lead).
 - Repeated items → component instances (add the def in `components/50-*.js`); buttons via `btn()`/`btnIcon()`,
   arrow links via `arrowLink()`, images via `media()`, content on photos via `overlay()`, icons via `icon()`.
-- Widths by `span(n)`; spacing only from tokens; colours via tokens and `ink(env, …)` on dark surfaces.
+- Widths by `span(n)`; spacing only from tokens (px or `space-*` names); colours by their Bricks token names (the
+  class CSS of the section names them: `--text-title` → `"text-title"`), read through the surface with
+  `ink(env, …)` / `tok(env, …)` so dark bands pick `inverse/…`.
 - Rich text (links, bold inside a paragraph): one text node, ranges styled with `setRangeFills` /
   `setRangeTextStyleIdAsync`; never one node per run.
 

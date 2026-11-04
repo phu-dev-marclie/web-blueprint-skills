@@ -60,21 +60,31 @@ surveying from scratch.
 
 ## 3. Tokens (`tokens.json`)
 
-- `fonts.heading` / `fonts.body`: the site's families. Check they are installed in Figma
-  (`figma.listAvailableFontsAsync()`); every style name used in `type` must exist in that family.
-- `primitives`: the site palette (hex). `alpha`: translucent whites/blacks used on dark surfaces.
-- `semantic`: keep all names (lib, kit and core components use them), point them at the right primitives;
-  add project-specific ones (e.g. `bg/care`) and add their surfaces under `surfaces`.
-- `type`: map the site's type scale to the style names; line heights rounded to 4px; letter spacing in %.
-- `space`, `radius`: 4px multiples. `grid` stays 1512/12/92/24/72 unless the user asks otherwise
-  (foundations checks the arithmetic). If the site's container differs (e.g. 1248 content), ask once: site
-  proportions on a custom grid vs. the skill grid — then map the site's fractions onto column spans.
-- `section.padY` / `ruleBetweenPlain`: the site's vertical rhythm between sections.
-- `effects` / `gradients`: the site's box-shadows and linear-gradients as effect/paint styles (kit `elevate()`,
-  `gradient()`), so cards, menus, form panels keep their shadows. Translucent overlays stay colour tokens.
-- Mobile screens requested: `gridMobile` (440 page, the site's mobile side padding) and `mobile: [size, lh]` on every
-  heading style whose size changes at the mobile width (measure there; body sizes usually stay) — foundations adds
-  the Typography mode "Mobile" (needs a paid Figma plan for modes).
+Names are the Bricks token names of skill `bricks-bem-html` (`references/tokens.md`): map the site's CSS onto them
+instead of inventing names, so the Figma variables and the later Bricks build cross-reference 1:1.
+
+- `fonts`: `font-family` (body) / `font-family-display` (headings) = the site's families. Check they are installed in
+  Figma (`figma.listAvailableFontsAsync()`); every style name used in `type` must exist in that family.
+- `brand` / `neutrals`: the site palette as Bricks Brand colours (+ `-l-N` / `-d-N` shades) and Neutrals (alpha).
+- `theme`: keep every role name (lib, kit and core components use them), point each at a brand / neutral colour or
+  a literal; `components`: the component variables (`btn-*`, `photo-*`, `lede-fg`, `surface-*`) pointing at roles.
+  Add project-specific roles the Bricks way (`bg-care` …) and their surfaces under `surfaces`.
+- `surfaces`: one key per `[data-surface]` (`default`, `subtle`, `inverse`…) with its `fill` role, `dark: true` when
+  text on it is light, and `tokens` = the variables that surface re-points (`inverse/btn-bg` …).
+- `text`: the `text-xs…6xl` sizes as `[px at 1512, px at 440]`; `type`: map the site's type scale to the style
+  names, size = a `text-*` name, line heights rounded to 4px (`[desktop, mobile]` when they differ), letter spacing
+  in %, `extra.lineHeight` = the `line-height-*` token.
+- `space` (`space-*` scale), `spaceLiterals` (other 4px lengths the CSS writes literally → `figma/px-N`), `radius`
+  (`radius-*`): 4px multiples. `grid` stays 1512/12/92/24/72 unless the user asks otherwise (foundations checks the
+  arithmetic). If the site's container differs (e.g. 1248 content), ask once: site proportions on a custom grid vs.
+  the skill grid — then map the site's fractions onto column spans.
+- `section.padY` (→ `layout-section-pad`) / `ruleBetweenPlain`: the site's vertical rhythm between sections.
+- `effects` / `gradients`: the site's box-shadows and linear-gradients as effect/paint styles named after the tokens
+  (`shadow-m`, `gradient-brand`; kit `elevate()`, `gradient()`), so cards, menus, form panels keep their shadows.
+  Translucent overlays stay colour tokens.
+- Mobile screens requested: `gridMobile` (440 page, the site's mobile side padding) and the 440 px values of `text`
+  (measure there) — foundations adds the Typography mode "Mobile" (needs a paid Figma plan for modes).
+- A ux-wireframe handoff (`--from-wireframe`) fills all of this from the wireframe's `tokens.py`.
 
 ```js
 await H.runStep("build/foundations.js");          // upsert; { reset: true } only on a blank file
@@ -161,6 +171,7 @@ affected pages, re-audit.
 
 ## 8. Report to the user
 
-Pages built (where), component list, token collections, the font switch (`font/heading`, `font/body`),
+Pages built (where), component list, token collections (Bricks names), the font switch (`font-family`,
+`font-family-display`), values snapped to the 4px grid (handoff warnings),
 how images are swapped, deviations from the HTML and why, how to rebuild (`A.assemble`), what needs the
 plugin open. Remove `tmp-*` exports and `.tool-cache/`.

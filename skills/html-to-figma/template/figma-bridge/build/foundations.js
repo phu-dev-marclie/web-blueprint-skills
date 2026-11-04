@@ -1,4 +1,6 @@
-// Foundations: pages, variables (colour, spacing, radius, layout, fonts), text styles, layout grid style.
+// Foundations: pages, variables (colour, spacing, radius, layout, fonts, font sizes), text styles, layout grid style.
+// Variable names = the Bricks token names of skill bricks-bem-html without "--" (code syntax WEB = var(--name)), in
+// collections that mirror the Bricks Style Manager; Figma-only helpers live under "figma/…" and carry no code syntax.
 // Upsert by name — safe to re-run after editing tokens.json: existing variables/styles keep their ids, so every
 // binding in the file follows the new values. Nothing is deleted unless DATA.reset (blank files only).
 // Run with: H.runStep("build/foundations.js", { reset: false })
@@ -25,7 +27,8 @@ async function collection(name, modeName) {
   c.renameMode(c.modes[0].modeId, modeName);
   return c;
 }
-function upVar(c, name, type, value, scopes, hidden = false) {
+// meta: {hidden, code: Bricks token name for the WEB code syntax (default: the name; none for figma/…), description}
+function upVar(c, name, type, value, scopes, meta = {}) {
   let v = allVars.find((x) => x.variableCollectionId === c.id && x.name === name);
   if (v && v.resolvedType !== type) throw new Error(`variable ${name} exists with type ${v.resolvedType}, wanted ${type}`);
   if (!v) {
@@ -34,9 +37,13 @@ function upVar(c, name, type, value, scopes, hidden = false) {
     log.created.push(name);
   } else log.updated++;
   try {
-    v.setValueForMode(c.modes[0].modeId, value);
+    for (const m of c.modes) v.setValueForMode(m.modeId, value);
     v.scopes = scopes;
-    v.hiddenFromPublishing = hidden;
+    v.hiddenFromPublishing = !!meta.hidden;
+    const code = meta.code !== undefined ? meta.code : name.startsWith("figma/") ? null : name;
+    if (code) v.setVariableCodeSyntax("WEB", `var(--${code})`);
+    else if (v.codeSyntax && v.codeSyntax.WEB) v.removeVariableCodeSyntax("WEB");
+    if (meta.description !== undefined) v.description = meta.description;
   } catch (e) {
     throw new Error(`variable ${c.name}/${name}: ${e && (e.message || e)}`);
   }
@@ -50,41 +57,63 @@ const SCOPES = {
   stroke: ["STROKE_COLOR"],
   "fill+stroke": ["FRAME_FILL", "SHAPE_FILL", "STROKE_COLOR"],
   "text+stroke": ["TEXT_FILL", "STROKE_COLOR"],
+  all: ["FRAME_FILL", "SHAPE_FILL", "TEXT_FILL", "STROKE_COLOR"],
 };
+const entries = (o) => Object.entries(o || {}).filter(([k]) => !k.startsWith("$"));
 
-// ---------- colour: primitives (hidden from pickers) → semantic aliases (what layers use)
-const prim = await collection("Primitives", "Value");
-const P = {};
-for (const [name, h] of Object.entries(T.primitives)) P[name] = upVar(prim, name, "COLOR", hex(h), [], true);
-for (const [name, [h, a]] of Object.entries(T.alpha || {})) P[name] = upVar(prim, name, "COLOR", hex(h, a), [], true);
-const color = await collection("Color", "Light");
-for (const [name, ref, scope] of T.semantic) {
-  if (!P[ref]) throw new Error(`semantic ${name} → unknown primitive ${ref}`);
-  if (!SCOPES[scope]) throw new Error(`semantic ${name}: unknown scope ${scope}`);
-  upVar(color, name, "COLOR", figma.variables.createVariableAlias(P[ref]), SCOPES[scope]);
+// ---------- colour: Brand + Neutrals palettes (hidden from pickers) → Theme roles → component variables → surfaces
+const COL = {};
+const colourValue = (value, who) => {
+  if (typeof value === "string" && value.startsWith("#")) return hex(value);
+  if (Array.isArray(value)) return hex(value[0], value[1]);
+  if (!COL[value]) throw new Error(`${who} → unknown colour ${value} (define it earlier in tokens.json)`);
+  return figma.variables.createVariableAlias(COL[value]);
+};
+const brand = await collection("Brand", "Value");
+for (const [name, value] of entries(T.brand)) COL[name] = upVar(brand, name, "COLOR", colourValue(value, name), [], { hidden: true });
+const neutrals = await collection("Neutrals", "Value");
+for (const [name, value] of entries(T.neutrals)) COL[name] = upVar(neutrals, name, "COLOR", colourValue(value, name), [], { hidden: true });
+const colourRows = async (c, rows, prefix = "", meta = () => ({})) => {
+  for (const [name, value, scope] of rows || []) {
+    if (!SCOPES[scope]) throw new Error(`${prefix}${name}: unknown scope ${scope}`);
+    const v = upVar(c, prefix + name, "COLOR", colourValue(value, prefix + name), SCOPES[scope], meta(name));
+    if (!prefix) COL[name] = v;
+  }
+};
+const theme = await collection("Theme", "Light");
+await colourRows(theme, T.theme);
+const comps = await collection("Components", "Default");
+await colourRows(comps, T.components);
+// A [data-surface] that re-points tokens: "<surface>/<token>" holds the value the token takes on that surface.
+const surfs = await collection("Surfaces", "Value");
+for (const [key, s] of entries(T.surfaces)) {
+  if (!COL[s.fill]) throw new Error(`surface ${key}: fill ${s.fill} is not a theme colour`);
+  await colourRows(surfs, s.tokens, key + "/", (name) => ({ code: name, description: `[data-surface="${key}"] --${name}` }));
 }
 
 // ---------- spacing, radius, layout (4px grid)
 const G = T.grid;
 const container = G.columns * G.column + (G.columns - 1) * G.gutter;
 if (container + 2 * G.margin !== G.page) throw new Error(`grid: ${G.columns}×${G.column} + gutters = ${container}, + 2×${G.margin} margins ≠ page ${G.page}`);
-for (const n of [G.column, G.gutter, G.margin, ...T.space, ...Object.values(T.radius).filter((r) => r < 999)]) if (n % 4) throw new Error(`off the 4px grid: ${n}`);
+for (const [name, n] of [["grid.column", G.column], ["layout-gutter", G.gutter], ["grid.margin", G.margin], ...entries(T.space), ...(T.spaceLiterals || []).map((n) => ["spaceLiterals", n]), ...entries(T.radius).filter(([, r]) => r < 999)])
+  if (n % 4) throw new Error(`off the 4px grid: ${name} = ${n}`);
 const dims = await collection("Spacing", "Desktop");
-for (const s of T.space) upVar(dims, "space/" + s, "FLOAT", s, ["GAP"]);
-for (const [k, r] of Object.entries(T.radius)) upVar(dims, "radius/" + k, "FLOAT", r, ["CORNER_RADIUS"]);
-upVar(dims, "layout/page", "FLOAT", G.page, ["WIDTH_HEIGHT"]);
-upVar(dims, "layout/container", "FLOAT", container, ["WIDTH_HEIGHT"]);
-upVar(dims, "layout/gutter", "FLOAT", G.gutter, ["GAP"]);
-upVar(dims, "layout/margin", "FLOAT", G.margin, ["GAP"]);
-// Column spans: layout/col-N = N columns + (N − 1) gutters. Bind any width to these to snap it to the grid.
-for (let n = 1; n <= G.columns; n++) upVar(dims, "layout/col-" + n, "FLOAT", n * G.column + (n - 1) * G.gutter, ["WIDTH_HEIGHT"]);
+for (const [name, s] of entries(T.space)) upVar(dims, name, "FLOAT", s, ["GAP"]);
+for (const n of T.spaceLiterals || []) upVar(dims, "figma/px-" + n, "FLOAT", n, ["GAP"], { description: `Figma-only: ${n}px written as a literal in the class CSS (no Bricks token)` });
+for (const [name, r] of entries(T.radius)) upVar(dims, name, "FLOAT", r, ["CORNER_RADIUS"]);
+upVar(dims, "layout-gutter", "FLOAT", G.gutter, ["GAP"]);
+if (T.section && T.section.padY) upVar(dims, "layout-section-pad", "FLOAT", T.section.padY, ["GAP"]);
+upVar(dims, "figma/page", "FLOAT", G.page, ["WIDTH_HEIGHT"], { description: "Figma-only: desktop frame width" });
+upVar(dims, "figma/container", "FLOAT", container, ["WIDTH_HEIGHT"], { description: "Figma-only: container content width = --max-screen-width − 2 × --container-padding" });
+upVar(dims, "figma/margin", "FLOAT", G.margin, ["GAP"], { description: "Figma-only: side margin of the container in the 1512 frame" });
+// Column spans: figma/col-N = N columns + (N − 1) gutters. Bind any width to these to snap it to the grid.
+for (let n = 1; n <= G.columns; n++) upVar(dims, "figma/col-" + n, "FLOAT", n * G.column + (n - 1) * G.gutter, ["WIDTH_HEIGHT"], { description: `Figma-only: width of ${n} grid column${n > 1 ? "s" : ""}` });
 
-// ---------- fonts: one variable per role; every text style's family is bound to its role
-// Typography has the modes Desktop and — when tokens define mobile sizes or gridMobile — Mobile: styles with
-// `extra.mobile: [size, lineHeight]` bind fontSize and lineHeight to "type/<style>/size|line" variables, so the same
-// style renders smaller in a frame set to Mobile (the harness sets that mode on device "mobile" frames).
+// ---------- typography: font families (font-family, font-family-display) and the text-* font-size scale
+// Modes Desktop and — when tokens define mobile values or gridMobile — Mobile (the harness sets Mobile on device
+// "mobile" frames): text-* hold [1512, 440] px; styles whose line height differs on mobile bind it to figma/line/<style>.
 const typo = await collection("Typography", "Desktop");
-const wantsMobile = !!T.gridMobile || T.type.some((t) => t[6] && t[6].mobile);
+const wantsMobile = !!T.gridMobile || entries(T.text).some(([, [d, m]]) => d !== m) || T.type.some((t) => Array.isArray(t[4]));
 let MOBILE_MODE = null;
 if (wantsMobile) {
   const existing = typo.modes.find((m) => m.name === "Mobile");
@@ -95,18 +124,23 @@ if (wantsMobile) {
   }
 }
 const FONT = {};
-for (const [role, family] of Object.entries(T.fonts)) {
-  FONT[role] = upVar(typo, "font/" + role, "STRING", family, ["FONT_FAMILY"]);
-  if (MOBILE_MODE) FONT[role].setValueForMode(MOBILE_MODE, family);
+for (const [name, family] of entries(T.fonts)) FONT[name] = upVar(typo, name, "STRING", family, ["FONT_FAMILY"]);
+const SIZEVAR = {};
+for (const [name, [d, m]] of entries(T.text)) {
+  SIZEVAR[name] = upVar(typo, name, "FLOAT", d, ["FONT_SIZE"]);
+  if (MOBILE_MODE) SIZEVAR[name].setValueForMode(MOBILE_MODE, m);
 }
 
 const available = await figma.listAvailableFontsAsync();
 const styleExists = (family, style) => available.some((f) => f.fontName.family === family && f.fontName.style === style);
 const styles = await figma.getLocalTextStylesAsync();
-for (const [name, role, fontStyle, size, lh, ls, extra = {}] of T.type) {
-  const family = T.fonts[role];
-  if (!family) throw new Error(`text style ${name}: unknown font role ${role}`);
-  if (lh % 4) throw new Error(`text style ${name}: line height ${lh} is off the 4px grid`);
+const slug = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+for (const [name, fontVar, fontStyle, size, line, ls, extra = {}] of T.type) {
+  const family = T.fonts[fontVar];
+  if (!family) throw new Error(`text style ${name}: unknown font variable ${fontVar} (tokens.json → fonts)`);
+  if (typeof size === "string" && !SIZEVAR[size]) throw new Error(`text style ${name}: unknown font size ${size} (tokens.json → text)`);
+  const [lineD, lineM] = Array.isArray(line) ? line : [line, line];
+  if (lineD % 4 || lineM % 4) throw new Error(`text style ${name}: line height ${lineD}/${lineM} is off the 4px grid`);
   if (!styleExists(family, fontStyle)) {
     const have = available.filter((f) => f.fontName.family === family).map((f) => f.fontName.style);
     throw new Error(`font ${family} has no style "${fontStyle}" (available: ${have.join(", ") || "family not installed"})`);
@@ -120,22 +154,20 @@ for (const [name, role, fontStyle, size, lh, ls, extra = {}] of T.type) {
     log.created.push("text style " + name);
   } else log.updated++;
   s.fontName = { family, style: fontStyle };
-  s.fontSize = size;
-  s.lineHeight = { unit: "PIXELS", value: lh };
+  s.fontSize = typeof size === "string" ? T.text[size][0] : size;
+  s.lineHeight = { unit: "PIXELS", value: lineD };
   s.letterSpacing = { unit: "PERCENT", value: ls };
   s.textCase = extra.textCase || "ORIGINAL";
   s.textDecoration = extra.decoration || "NONE";
-  s.setBoundVariable("fontFamily", FONT[role]);
-  if (extra.mobile) {
-    const [ms, ml] = extra.mobile;
-    if (ml % 4) throw new Error(`text style ${name}: mobile line height ${ml} is off the 4px grid`);
-    const vs = upVar(typo, "type/" + name + "/size", "FLOAT", size, ["FONT_SIZE"]);
-    const vl = upVar(typo, "type/" + name + "/line", "FLOAT", lh, ["LINE_HEIGHT"]);
-    vs.setValueForMode(MOBILE_MODE, ms);
-    vl.setValueForMode(MOBILE_MODE, ml);
-    s.setBoundVariable("fontSize", vs);
+  s.setBoundVariable("fontFamily", FONT[fontVar]);
+  s.setBoundVariable("fontSize", typeof size === "string" ? SIZEVAR[size] : null);
+  if (MOBILE_MODE && lineM !== lineD) {
+    const vl = upVar(typo, "figma/line/" + slug(name), "FLOAT", lineD, ["LINE_HEIGHT"], { description: `Figma-only: line height of ${name} in px` });
+    vl.setValueForMode(MOBILE_MODE, lineM);
     s.setBoundVariable("lineHeight", vl);
-  }
+  } else s.setBoundVariable("lineHeight", null);
+  s.description = [`font-family var(--${fontVar})`, typeof size === "string" ? `font-size var(--${size})` : `font-size ${size}px`,
+    extra.lineHeight ? `line-height var(--${extra.lineHeight})` : null].filter(Boolean).join(" · ");
   TS[name] = s;
 }
 
@@ -158,10 +190,10 @@ if (T.gridMobile) {
   mg.layoutGrids = [{ pattern: "COLUMNS", alignment: "STRETCH", count: M.columns, gutterSize: M.gutter, offset: M.margin, visible: true, color: { r: 0.94, g: 0.29, b: 0.33, a: 0.08 } }];
 }
 
-// ---------- effect styles (tokens.json → effects) and gradient paint styles (tokens.json → gradients)
-// effects: {"Shadow/Card": [{x, y, blur, spread, color: "#192A43", alpha: 0.4}, …]} — CSS box-shadow layers (outer;
-// `inset: true` = inner shadow); a layer {backgroundBlur: 24} = CSS backdrop-filter blur (frosted glass).
-// gradients: {"Gradient/Brand": {angle: 135, stops: [["#1F3A61", 0], ["#192A43", 1]]}} — CSS linear-gradient angle;
+// ---------- effect styles (tokens.json → effects) and gradient paint styles (tokens.json → gradients), named after
+// the Bricks tokens: effects {"shadow-m": [{x, y, blur, spread, color: "#192A43", alpha: 0.4}, …]} — CSS box-shadow
+// layers (outer; `inset: true` = inner shadow); a layer {backgroundBlur: 24} = CSS backdrop-filter blur (frosted glass).
+// gradients: {"gradient-brand": {angle: 135, stops: [["#1F3A61", 0], ["#192A43", 1]]}} — CSS linear-gradient angle;
 // a stop may carry an alpha: ["#FFFFFF", 1, 0].
 if (T.effects) {
   const effects = await figma.getLocalEffectStylesAsync();
@@ -189,7 +221,7 @@ if (T.gradients) {
 }
 
 // ---------- report variables in managed collections that tokens.json no longer defines (kept: bindings may use them)
-const managed = new Set([prim.id, color.id, dims.id, typo.id]);
+const managed = new Set([brand.id, neutrals.id, theme.id, comps.id, surfs.id, dims.id, typo.id]);
 for (const v of allVars) if (managed.has(v.variableCollectionId) && !seen.has(v.id)) log.stale.push(v.name);
 return {
   created: log.created.length > 20 ? log.created.length + " items" : log.created,

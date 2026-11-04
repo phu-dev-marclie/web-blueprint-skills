@@ -343,19 +343,22 @@ def main() -> int:
             "nav from data-chrome": [n["label"] for n in data.get("chrome", {}).get("nav", [])] == ["Services", "About"],
             "grid 1512/12/84/32/76 from the container tokens": data.get("tokens", {}).get("grid") ==
                                      {"page": 1512, "columns": 12, "column": 84, "gutter": 32, "margin": 76},
-            # h1 = --text-5xl × --line-height-s (1.2), fluid: 47.8 px at 1512, 34.05 px at 440
-            "Heading/H1 47.8/57.36, mobile 34.05/40.86": bool(type_h1) and type_h1[3:5] == [47.8, 57.36]
-                                              and (type_h1[-1] or {}).get("mobile") == [34.05, 40.86],
+            # h1 = --text-5xl × --line-height-s (1.2), fluid: 47.8 px at 1512, 34.05 px at 440; line heights on 4px
+            "Heading/H1 text-5xl, line 56/40": bool(type_h1) and type_h1[3:5] == ["text-5xl", [56, 40]]
+                                              and data["tokens"].get("text", {}).get("text-5xl") == [47.8, 34.05],
             "icons harvested": {"arrow-right", "list", "x"} <= set(data.get("icons", {}).get("keys", [])),
             "components exported": data.get("components", {}).get("Button: Primary", {}).get("props") == ["label"]
                                    and data["components"].get("Card: Service", {}).get("pageCount") == 1
                                    and data["components"]["Card: Service"].get("block") == "w-card-service",
             "surfaces inverse/subtle": {"inverse", "subtle"} <= set(data.get("tokens", {}).get("surfaces", {})),
-            "colour/space/radius tokens from tokens.py": "secondary/d-1" in data.get("tokens", {}).get("primitives", {})
-                                   and ["text/title", "primary/base", "text"] in data["tokens"].get("semantic", [])
-                                   and ["bg/body", "role/bg-body", "fill"] in data["tokens"].get("semantic", [])
-                                   and 16 in data["tokens"].get("space", [])
-                                   and data["tokens"].get("radius", {}).get("full") == 999,
+            "tokens keep the Bricks names": "secondary-d-1" in data.get("tokens", {}).get("brand", {})
+                                   and ["text-title", "primary", "text"] in data["tokens"].get("theme", [])
+                                   and ["bg-body", "#FFFFFF", "fill"] in data["tokens"].get("theme", [])
+                                   and ["btn-bg", "active", "fill"] in data["tokens"].get("components", [])
+                                   and ["btn-bg", "all-light", "fill"] in data["tokens"]["surfaces"].get("inverse", {}).get("tokens", [])
+                                   and data["tokens"].get("space", {}).get("space-m") == 16
+                                   and data["tokens"].get("space", {}).get("space-l") == 24
+                                   and data["tokens"].get("radius", {}).get("radius-full") == 999,
             "mobile nav state": any(m.get("prepare") for m in data.get("mobile", [])),
         }
         bad = [k for k, v in checks.items() if not v]

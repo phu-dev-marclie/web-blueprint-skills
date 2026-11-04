@@ -7,6 +7,10 @@ the classes and the site always share names and values. Values that Bricks gener
 are computed with Bricks' own maths (PHP ports in `tokens_builder.py`) and checked with
 `scripts/bricks_tokens_verify.php`.
 
+The Figma file (skill `html-to-figma`, from the ux-wireframe handoff or a site) uses the same names for its
+variables (`text-title`, `btn-bg`, `space-m`, `text-4xl`; a surface's re-pointed value as `inverse/btn-bg`), with
+code syntax `var(--name)`, so design, mockup and site cross-reference 1:1.
+
 ## Settings (Style Manager)
 
 | Setting | Value | Why |

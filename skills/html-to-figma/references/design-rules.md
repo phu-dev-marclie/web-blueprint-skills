@@ -2,38 +2,52 @@
 
 ## Variables (created by `build/foundations.js` from `tokens.json`)
 
+Names are the Bricks token names of skill `bricks-bem-html` (`references/tokens.md`) without `--`, so a designer
+reads `text-title` in Figma and finds `var(--text-title)` in Bricks; each variable's WEB code syntax is that
+`var(--name)` (Dev Mode). The collections mirror the Bricks Style Manager:
+
 | Collection | Variables | Notes |
 |---|---|---|
-| Primitives | raw palette `neutral/900`, `brand/700`, `white/76`… | hidden from pickers (`scopes = []`); change these to re-theme |
-| Color | semantic `text/*`, `bg/*`, `border/*`, `action/*`, `accent/*`, `image/*`, `status/*` | aliases of primitives; scoped (text → TEXT_FILL, bg → fills, border → strokes) |
-| Spacing | `space/4…128`, `radius/sm|md|lg|full`, `layout/page|container|gutter|margin`, `layout/col-1…12` | gaps/paddings bound to `space/*`; widths of column spans bound to `layout/col-N` |
-| Typography | `font/heading`, `font/body` (STRING, FONT_FAMILY scope); `type/<style>/size|line` (FLOAT) for styles with mobile sizes | modes Desktop / Mobile (Mobile only when tokens define mobile sizes or `gridMobile`) |
+| Brand | `primary`, `primary-l-1…4`, `primary-d-1…4`, `secondary…`, `tertiary` | Color Manager palette; hidden from pickers (`scopes = []`); change these to re-theme |
+| Neutrals | `light`, `dark` (+ `-5…-90` alpha), `all-light`, `all-dark` (+ alpha) | Color Manager palette; hidden |
+| Theme | roles `bg-body`, `bg-surface(-2/-3)`, `bg-base`, `bg-accent`, `text-title`, `text-body`, `text-body-dark`, `text-eyebrow`, `text-contrast`, `accent`, `border-subtle/-light/-dark/-strong`, `active`, `active-hover`, `hover`, `focus`, `success`, `error` (+`-bg`) | alias Brand / Neutrals or hold a literal; scoped from the name (bg → fills, text → text, border → strokes) |
+| Components | `btn-bg`, `btn-fg`, `btn-border` (+`-hover`), `btn-secondary-*`, `photo-bg/-border/-fg`, `lede-fg`, `surface-text-muted`, `surface-link(-hover)` | alias Theme roles (Variables › Components in Bricks) |
+| Surfaces | `<surface>/<token>`, e.g. `inverse/btn-bg`, `inverse/text-eyebrow` | the value a `[data-surface="inverse"]` rule gives that token; code syntax `var(--btn-bg)`, description names the rule |
+| Spacing | `space-3xs…5xl` (Bricks scale at 1512, snapped to 4px), `radius-*`, `layout-gutter`, `layout-section-pad`; Figma-only `figma/page`, `figma/container`, `figma/margin`, `figma/col-1…12`, `figma/px-N` (4px literals of the class CSS) | gaps/paddings bind by value (space-* first) or by name; column-span widths bind to `figma/col-N` |
+| Typography | `font-family`, `font-family-display` (STRING); `text-xs…6xl` (FLOAT, Desktop = 1512 px, Mobile = 440 px of the fluid scale); Figma-only `figma/line/<style>` where a style's line height differs on mobile | modes Desktop / Mobile (Mobile only when tokens define mobile values or `gridMobile`) |
 
-Layers only ever use **semantic** colour tokens. `foundations.js` upserts by name (ids stay, bindings follow
-new values); it reports `stale` variables instead of deleting them.
+Layers only use Theme roles, component variables and surface tokens — never Brand / Neutrals directly, never a
+`figma/…` colour. A dark section reads its tokens through the surface: kit `ink(env, "text-eyebrow")` →
+`inverse/text-eyebrow`, `ink(env, "text-title", "text-contrast")` for tokens the surface does not re-point.
+`foundations.js` upserts by name (ids stay, bindings follow new values); it reports `stale` variables instead of
+deleting them. A file built with the earlier names (`text/default`, `space/16`, `Primitives`/`Color`) is rebuilt:
+foundations `{ reset: true }` on the designated file, then components and pages.
 
-Font switch: change `font/heading` or `font/body` in the Variables panel → every bound text style updates.
+Font switch: change `font-family` or `font-family-display` in the Variables panel → every bound text style updates.
 The new family must contain the style names the type scale uses (e.g. "Semi Bold" vs "SemiBold" differ per
 family) — check before switching, or adjust `tokens.json → type` and re-run foundations.
 
-Effect styles (`Shadow/*`) and gradient paint styles (`Gradient/*`) come from `tokens.json → effects/gradients`:
-site box-shadows and linear-gradients map to them (`elevate()`, `gradient()`), never to raw effects on layers.
+Effect styles and gradient paint styles are named after the tokens (`shadow-m`, `gradient-brand`) and come from
+`tokens.json → effects/gradients`: site box-shadows and linear-gradients map to them (`elevate()`, `gradient()`),
+never to raw effects on layers.
 
 Responsive type: the same style names everywhere; a mobile frame carries the Typography mode "Mobile", so
-`Heading/H1` renders at its mobile size there. Components made for mobile set that mode on themselves so they
-preview correctly on the Components page.
+`Heading/H1` renders at its mobile size there (its `text-5xl` variable switches). Components made for mobile set
+that mode on themselves so they preview correctly on the Components page.
 
 ## Text styles
 
 Names `Group/Name` (`Heading/H2`, `Body/MD`, `Label/Button LG`). The template scale covers display, H1–H6,
 body XL–Micro, titles, labels, button, field, stat, wordmark — keep the names lib/kit/core use, change values.
+Each style binds its font size to a `text-*` variable and its family to `font-family` / `font-family-display`; the
+style description names the Bricks tokens (`font-size var(--text-4xl) · line-height var(--line-height-s)`).
 Line heights are pixel values on the 4px grid. Bold/link runs inside a paragraph: range overrides
 (`setRangeTextStyleIdAsync` with a style, or `text(…, {link})`), never a second text node per run.
 
 ## Grid and widths
 
-Desktop frame 1512 wide (`layout/page`), container 1368 (`layout/container`) centred, 72 margins.
-12 columns of 92 with 24 gutters: `span(n) = 116n − 24`.
+Desktop frame 1512 wide (`figma/page`), container 1368 (`figma/container`) centred, 72 margins (`figma/margin`).
+12 columns of 92 with 24 gutters (`layout-gutter`): `span(n) = 116n − 24`.
 
 | Columns | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -94,7 +108,7 @@ Desktop frame 1512 wide (`layout/page`), container 1368 (`layout/container`) cen
 ## Images
 
 - One component: `Image/Placeholder` (caption text + `Show caption`). `media()` creates an instance named
-  `Image · <name>`; a real photo becomes the instance fill (FILL = cover, FIT = contain on `bg/surface`),
+  `Image · <name>`; a real photo becomes the instance fill (FILL = cover, FIT = contain on `bg-surface`),
   caption hidden. Designers swap a photo: select instance → Fill → image.
 - Content on top of a photo (hero text, tile titles, card badges, map pins): kit `overlay(name, m, o, kids)` → an
   auto-layout frame named `Image · <name>` whose fill is the photo (+ optional scrim token); the audit accepts image
@@ -111,5 +125,5 @@ Desktop frame 1512 wide (`layout/page`), container 1368 (`layout/container`) cen
 
 Content complete (all visible text, in order) · hierarchy (text styles match sizes/weights) · proportions
 (spans) · surface colour · images in the right slots · interactive widgets in their default rendered state
-(first tab active, accordions as rendered, hidden panels skipped) · dark surfaces use `text/on-dark*` and
-Theme=Dark buttons.
+(first tab active, accordions as rendered, hidden panels skipped) · dark surfaces read their tokens through the
+surface (`ink(env, …)` → `inverse/…`, `text-contrast`) and use Theme=Dark buttons.

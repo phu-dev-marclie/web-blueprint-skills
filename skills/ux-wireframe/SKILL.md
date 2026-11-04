@@ -184,8 +184,10 @@ python wireframe/build.py --final && python wireframe/handoff.py   # → wirefra
 `bricks-tokens.json` goes into Bricks' Style Manager with `bricks-bem-html/scripts/bricks_tokens_apply.php`
 (check with `bricks_tokens_verify.php`). `figma.json` carries pages, UI states (menus, dialogs, tabs,
 wizard steps, mobile nav/filters), layout inventory, component catalogue (`components`: block, `data-prop`
-ids, instance/page counts), header/footer content (`data-chrome` hooks), tokens in the html-to-figma
-`tokens.json` shape (read from `bricks-tokens.json`, fluid values at 1512 / 440) and the icon list.
+ids, instance/page counts), header/footer content (`data-chrome` hooks), tokens under the same Bricks
+token names (`text-title`, `btn-bg`, `space-m`, `text-4xl`; `[data-surface]` re-pointing as `inverse/btn-bg`;
+fluid values at 1512 / 440, lengths snapped to 4px with a warning) and the icon list — every Figma variable
+is then `var(--name)` in Bricks.
 html-to-figma: `init_project.py --from-wireframe wireframe`.
 
 ## Examples

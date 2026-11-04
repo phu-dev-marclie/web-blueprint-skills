@@ -16,13 +16,14 @@ EXTRACT["faq-split"] = (sec) => ({
 });
 
 BUILD["faq-split"] = async (d, env) =>
-  // section(): full-width band + 1368 container + the site's vertical rhythm. Columns via span(n).
-  section("FAQ", env, { dir: "h", gap: 24 }, [
+  // section(): full-width band + container + the site's vertical rhythm. Columns via span(n). Colours are Bricks
+  // token names; ink(env, …) reads them through the section's surface (inverse/… on a dark band).
+  section("FAQ", env, { dir: "h", gap: "layout-gutter" }, [
     frame("Heading column", { gap: 8, w: span(4) }, [
       d.eyebrow ? eyebrow(d.eyebrow, env) : null,
-      text("Title", "Heading/H2", d.title, { color: ink(env, "text/default", "text/on-dark"), w: "fill" }),
-      d.lede ? text("Lede", "Body/XS", d.lede, { color: ink(env, "text/muted", "text/on-dark-muted"), w: "fill" }) : null,
+      text("Title", "Heading/H2", d.title, { color: ink(env, "text-title", "text-contrast"), w: "fill" }),
+      d.lede ? text("Lede", "Body/XS", d.lede, { color: ink(env, "surface-text-muted"), w: "fill" }) : null,
     ]),
-    frame("Questions", { w: span(8), stroke: { color: "border/strong", sides: ["top"] } }, d.items.map((it) =>
+    frame("Questions", { w: span(8), stroke: { color: ink(env, "border-strong"), sides: ["top"] } }, d.items.map((it) =>
       inst(variant(C["Accordion/Item"], { State: it.open ? "Open" : "Closed" }), { Question: it.question, Answer: it.answer }, { name: "Q · " + it.question.slice(0, 40), w: "fill" }))),
   ]);

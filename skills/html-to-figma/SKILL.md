@@ -23,17 +23,24 @@ files the user designated, after a named version snapshot.
 
 ## Non-negotiable output rules (details: `references/design-rules.md`)
 
-1. **Design system:** colours = semantic variables aliasing hidden primitives; spacing/radius/layout =
-   variables; every text node uses a text style; heading/body font families are variables
-   (`font/heading`, `font/body`) bound to every text style, so one edit switches fonts file-wide.
-2. **Grid:** Desktop 1512, 12 columns × 92, gutter 24, container 1368, margins 72. Widths are column spans
-   `span(n) = 116n − 24` (3 → 324, 4 → 440, 6 → 672, 8 → 904, 10 → 1136, 12 → 1368), bound to the
-   `layout/col-N` variables automatically.
+1. **Design system, Bricks names:** every variable carries the Bricks token name of skill `bricks-bem-html`
+   (`references/tokens.md`) without `--`, with code syntax `var(--name)`: Brand + Neutrals palettes (hidden), Theme
+   roles (`bg-body`, `text-title`, `border-light`, `active`…), component variables (`btn-bg`, `photo-bg`,
+   `surface-link`…), surface re-pointing as `<surface>/<token>` (`inverse/btn-bg`), `space-*`, `radius-*`,
+   `layout-gutter`, `layout-section-pad`, font sizes `text-*` (modes Desktop / Mobile), font families
+   `font-family` / `font-family-display` bound to every text style, so one edit switches fonts file-wide. Figma-only
+   helpers live under `figma/…` (frame width, column spans, 4px literals, per-style line heights). Every text node
+   uses a text style.
+2. **Grid:** Desktop 1512, 12 columns × 92, gutter 24, container 1368, margins 72 (a ux-wireframe handoff brings its
+   own container grid, e.g. 84/32/76). Widths are column spans `span(n) = 116n − 24` (3 → 324, 4 → 440, 6 → 672,
+   8 → 904, 10 → 1136, 12 → 1368), bound to the `figma/col-N` variables automatically.
 3. **Auto Layout only:** every frame is horizontal/vertical auto layout (wrap allowed). No groups, no
    absolute positioning, no Figma grid layout, no rectangles/vectors as layout. Fidelity tools that stay within
    the rule: `tilt()` (rotation inside auto layout), fixed-size slot frames for staggered/overlapping positions,
    raster decorations (dashed routes) as an overlay fill, `edgeFade()` for masked/faded edges.
-4. **4px grid:** gaps/paddings only from `space/*` tokens (the helpers throw on anything else); line heights on 4.
+4. **4px grid:** gaps/paddings only from spacing variables (`space-*`, `layout-gutter`, `figma/margin`,
+   `figma/px-N`; the helpers throw on anything else); Bricks values off the grid are snapped and reported; line
+   heights on 4.
 5. **Names:** every layer has a meaningful name ("Heading column", "Card · Wound Care"); no "Frame 12".
 6. **Components:** buttons and every repeated UI item are components with variants (`Prop=Value`) and
    text/boolean properties; pages use instances.
@@ -76,8 +83,9 @@ layouts + data) → bridge → plugin runs it in Figma → result. API: `referen
    UI states, mobile screens and tokens — steps 2–3 shrink to checking them.
 2. **Survey:** render pages at 1512 in the browser; list section layouts per page (`project.json → sections`
    expressions); measure computed styles; read the site CSS for colours, fonts, type scale, spacing.
-3. **Tokens:** fill `tokens.json` from the CSS (keep semantic names; snap to 4px; type scale in the site's
-   fonts). Ask the user only for genuine trade-offs (e.g. max-width that cannot sit on the 4px grid).
+3. **Tokens:** fill `tokens.json` from the CSS under the Bricks token names (map the site's values onto the
+   Bricks roles and scales, keep every name the template has; snap lengths to 4px; type scale in the site's fonts).
+   Ask the user only for genuine trade-offs (e.g. max-width that cannot sit on the 4px grid).
 4. **Foundations:** `H.runStep("build/foundations.js")` then `H.runStep("build/foundations-board.js")`
    (also effect/gradient styles from `tokens.json → effects/gradients`, and the Typography Mobile mode when
    mobile sizes are defined).

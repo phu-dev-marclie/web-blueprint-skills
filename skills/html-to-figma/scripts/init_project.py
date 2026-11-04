@@ -15,10 +15,11 @@ Creates <project>/figma-bridge/ from the skill template:
   assets/       images for Figma (scripts/convert_images.py, named by path below assets/)
 --upgrade never touches project.json, tokens.json, build/project-kit.js, components/ or layouts/ (project-owned).
 After an upgrade, move project helpers that lived in kit.js into build/project-kit.js and compare tokens.json with
-the template (new optional keys: gridMobile, effects, gradients, type[].mobile).
+the template. A project whose tokens.json still has the old names (primitives / semantic, text/default, space/16)
+is refused: the toolkit reads the Bricks token names now (re-init, or port tokens.json and the modules by hand).
 --from-wireframe reads <wireframe>/handoff/figma.json (ux-wireframe: `python wireframe/handoff.py` after
 `python wireframe/build.py --final`): site, name, sections, chrome, pages + UI states (+ mobile screens with
---mobile) and the tokens (template semantic names kept, values from the wireframe CSS).
+--mobile) and the tokens — already under the Bricks token names of the wireframe's tokens.py.
 """
 import argparse
 import html
@@ -33,6 +34,14 @@ SKILL = Path(__file__).resolve().parent.parent
 TEMPLATE = SKILL / "template" / "figma-bridge"
 TOOLKIT = ["build/lib.js", "build/kit.js", "build/foundations.js", "build/foundations-board.js",
            "tools/harness.js", "tools/assemble.js", "tools/diff.js", "tools/extract-kit.js", "tools/load.js"]
+
+# Colour tokens lib.js, kit.js, the core components, the chrome and the foundations board read (Bricks names).
+CORE_COLOURS = ["text-title", "text-body", "text-body-dark", "text-contrast", "text-eyebrow", "bg-body", "bg-surface",
+                "bg-surface-2", "bg-surface-3", "bg-base", "border-subtle", "border-light", "border-dark", "border-strong",
+                "active", "accent", "btn-bg", "btn-fg", "btn-border", "btn-bg-hover", "btn-fg-hover", "btn-border-hover",
+                "btn-secondary-fg", "btn-secondary-border", "btn-secondary-bg-hover", "btn-secondary-fg-hover",
+                "btn-secondary-border-hover", "photo-bg", "photo-border", "photo-fg", "lede-fg", "surface-text-muted",
+                "surface-link"]
 
 
 def page_list(site: Path):
@@ -55,26 +64,43 @@ def load_handoff(wf: Path):
     return json.loads(f.read_text(encoding="utf-8"))
 
 
+def round4(x: float) -> int:
+    return 0 if x == 0 else max(4, int(x / 4 + 0.5) * 4)
+
+
 def merge_tokens(tpl: dict, hand: dict) -> dict:
-    """Template tokens.json + handoff tokens: template semantic names/order/scopes kept, values from the handoff."""
+    """Template tokens.json + handoff tokens (both under the Bricks token names): the wireframe's values and names win;
+    the template keeps its docs and Figma-only keys (spaceLiterals, section rhythm) and adds the text styles the toolkit
+    needs that the wireframe has no role for, re-fitted to the wireframe's font sizes and line-height ratios."""
     out = dict(tpl)
-    for key in ("fonts", "primitives", "alpha", "grid", "gridMobile", "surfaces", "darkSurfaces", "radius", "effects", "gradients"):
+    for key in ("fonts", "brand", "neutrals", "theme", "components", "surfaces", "space", "radius", "text", "lineHeights",
+                "grid", "gridMobile", "effects", "gradients"):
         if key not in hand:
             continue
         docs = {k: v for k, v in tpl.get(key, {}).items() if k.startswith("$")} if isinstance(tpl.get(key), dict) else {}
         out[key] = {**docs, **hand[key]} if isinstance(hand[key], dict) else hand[key]
-    values = {name: ref for name, ref, _ in hand.get("semantic", [])}
-    missing = [name for name, _, _ in tpl["semantic"] if name not in values]
+    have = {r[0] for r in out["theme"]} | {r[0] for r in out["components"]}
+    missing = [n for n in CORE_COLOURS if n not in have]
     if missing:
-        sys.exit("error: the wireframe CSS defines no value for the semantic token(s) " + ", ".join(missing)
-                 + " — add them (--" + missing[0].replace("/", "-", 1) + ": var(--<primitive>)), re-run handoff.py")
-    known = {name for name, _, _ in tpl["semantic"]}
-    out["semantic"] = [[name, values[name], scope] for name, _, scope in tpl["semantic"]] + \
-                      [list(s) for s in hand.get("semantic", []) if s[0] not in known]
-    out["space"] = sorted(set(tpl.get("space", [])) | set(hand.get("space", [])))
-    styles = {t[0]: t for t in hand.get("type", [])}
-    names = {t[0] for t in tpl["type"]}
-    out["type"] = [styles.get(t[0], t) for t in tpl["type"]] + [t for t in hand.get("type", []) if t[0] not in names]
+        sys.exit("error: the wireframe's tokens.py defines no " + ", ".join("--" + n for n in missing)
+                 + " (Theme role or Components variable the Figma toolkit reads) — add them, re-run tokens.py and handoff.py")
+    ratios = {k: v for k, v in out.get("lineHeights", {}).items() if not k.startswith("$")}
+    names = {t[0] for t in hand.get("type", [])}
+    extra = []
+    for t in tpl["type"]:
+        if t[0] in names:
+            continue
+        row = list(t)
+        size, lh = row[3], (row[6] if len(row) > 6 else {}).get("lineHeight")
+        if isinstance(size, str):
+            if size not in out["text"]:
+                sys.exit(f"error: template text style {row[0]} uses --{size}, which the wireframe's tokens.py does not define")
+            if lh in ratios:
+                d, m = out["text"][size]
+                line = [round4(d * ratios[lh]), round4(m * ratios[lh])]
+                row[4] = line if line[0] != line[1] else line[0]
+        extra.append(row)
+    out["type"] = list(hand.get("type", [])) + extra
     if "section" in hand:
         out["section"] = {**tpl.get("section", {}), "padY": hand["section"]["padY"]}
     return out
@@ -108,6 +134,11 @@ def main():
     if a.upgrade:
         if not dest.is_dir():
             sys.exit(f"error: {dest} does not exist; run without --upgrade first")
+        old = json.loads((dest / "tokens.json").read_text(encoding="utf-8"))
+        if "semantic" in old or "primitives" in old:
+            sys.exit("error: tokens.json uses the old names (primitives / semantic, text/default, space/16); the toolkit "
+                     "reads the Bricks token names now — init a new figma-bridge (or port tokens.json, components/ and "
+                     "layouts/ to the names of the template tokens.json) and rebuild the file after foundations reset")
         for rel in TOOLKIT:
             (dest / rel).parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(TEMPLATE / rel, dest / rel)

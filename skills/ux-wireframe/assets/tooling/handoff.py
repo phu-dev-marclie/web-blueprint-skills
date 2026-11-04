@@ -5,10 +5,11 @@ Design-tool handoff: built wireframe -> html-to-figma.
     python wireframe/build.py --final     # strip review-only <!--wf:review--> blocks first
     python wireframe/handoff.py           # writes wireframe/handoff/figma.json
 
-Reads the built pages (wireframe/*.html), the design tokens of tokens.py (the Bricks Style Manager source, fluid
-values evaluated at 1512 px desktop / 440 px mobile: brand + neutral primitives, theme roles as semantic colours,
-spacing, radius, grid from the container tokens, type roles, shadows, gradients) and the stylesheets of
-site.config.json -> css (section surfaces from [data-surface="x"] rules, @font-face):
+Reads the built pages (wireframe/*.html), the design tokens of tokens.py (the Bricks Style Manager source, exported
+under the same token names without `--`; fluid values evaluated at 1512 px desktop / 440 px mobile: Brand + Neutrals
+palettes, Theme roles, component variables, space-* / radius-* / text-* scales, grid from the container tokens, type
+roles, shadow-* / gradient-*) and the stylesheets of site.config.json -> css (section surfaces and their token
+re-pointing from [data-surface="x"] rules, @font-face):
   chrome   header/footer content from the data-chrome hooks of index.html
   pages    every built page + UI states (header menus, dialogs, tabs, wizard steps) + mobile screens
   layouts  data-layout of the top-level sections, per page (the section's block is w-<layout>)
@@ -502,28 +503,17 @@ def length_at(value: str, width: int, html: float) -> float | None:
     return max(lo * h, min(val, hi * h))          # CSS clamp(): MIN wins when MIN > MAX
 
 
-def prim_name(token: str) -> str:
-    """primary → primary/base, primary-l-1 → primary/l-1, all-light-70 → all-light/70."""
-    m = re.fullmatch(r"(.+?)-((?:[ld]-)?\d+)", token)
-    return f"{m.group(1)}/{m.group(2)}" if m else f"{token}/base"
-
-
-def role_name(token: str) -> str:
-    """bg-body → bg/body, btn-bg-hover → btn/bg-hover, accent → accent/base."""
-    return token.replace("-", "/", 1) if "-" in token else f"{token}/base"
-
-
-def semantic_scope(name: str) -> str:
-    group, rest = name.split("/", 1)
-    if group in ("text", "hover"):
-        return "text"
-    if group in ("bg", "btn"):
+def color_scope(name: str) -> str:
+    """Figma picker scope of a Bricks colour token, from its name: bg-body → fill, border-light → stroke …"""
+    if name.startswith("bg-") or name.endswith("-bg") or "-bg-" in name:
         return "fill"
-    if group in ("border", "focus"):
+    if name.startswith("border-") or name.endswith("-border") or "-border-" in name or name == "focus":
         return "stroke"
-    if group in ("success", "error"):
-        return "fill" if rest == "bg" else "text+stroke"
-    return "fill+stroke"                               # accent, active
+    if "link" in name or name in ("success", "error", "warning"):
+        return "text+stroke"
+    if name.startswith("text-") or name.endswith("-fg") or "-fg-" in name or "text" in name:
+        return "text"
+    return "all"                                       # accent, active, hover …
 
 
 def single_var(value: str) -> str | None:
@@ -531,8 +521,9 @@ def single_var(value: str) -> str | None:
     return m.group(1) if m else None
 
 
-def style_name(prefix: str, key: str) -> str:
-    return prefix + "/" + " ".join(p[:1].upper() + p[1:] for p in key.split("-") if p)
+def round4(x: float) -> int:
+    """Snap a length to the Figma 4px grid (non-zero values never snap to 0)."""
+    return 0 if x == 0 else max(4, int(x / 4 + 0.5) * 4)
 
 
 def parse_shadow(value: str) -> list[dict] | None:
@@ -616,17 +607,25 @@ def first_family(stack: str) -> str:
     return fams[0].strip().strip("'\"") if fams else ""
 
 
+FONT_VAR = {"heading": "font-family-display", "body": "font-family"}
+EMPTY_TOKENS = {"fonts": {}, "brand": {}, "neutrals": {}, "theme": [], "components": [], "surfaces": {}, "space": {},
+                "radius": {}, "text": {}, "grid": {}, "gridMobile": {}, "type": [], "section": {"padY": 64},
+                "effects": {}, "gradients": {}}
+
+
 def build_tokens(sheet: Sheet, problems: Problems) -> dict:
-    """Figma tokens from tokens.py (light mode; fluid values at DESKTOP / MOBILE) + surfaces from the stylesheets."""
+    """Figma tokens from tokens.py, under the Bricks token names (no `--`): Brand + Neutrals palettes, Theme roles,
+    component variables, [data-surface] re-pointing as "<surface>/<token>", space-* / radius-* / text-* scales.
+    Light mode; fluid values at DESKTOP (text-* also at MOBILE); lengths snapped to the 4px grid (warned)."""
     if not TOKENS.is_file():
         problems.add(f"{TOKENS.relative_to(ROOT)} missing — run python tokens.py")
-        return {"fonts": {}, "primitives": {}, "alpha": {}, "semantic": [], "space": [], "radius": {}, "grid": {},
-                "gridMobile": {}, "type": [], "surfaces": {}, "darkSurfaces": [], "section": {"padY": 64},
-                "effects": {}, "gradients": {}}
+        return dict(EMPTY_TOKENS)
     data = json.loads(TOKENS.read_text(encoding="utf-8"))
+    palettes = {p["name"].rsplit("·", 1)[-1].strip(): p for p in data["palettes"]}
     colours = {c["name"]: c["light"] for p in data["palettes"] for c in p["colors"]}
     variables = {v["name"]: v["value"] for v in data["variables"]}
-    roles = [c["name"] for p in data["palettes"] if p["name"].endswith("Theme") for c in p["colors"]]
+    cat_name = {c["id"]: c["name"] for c in data.get("categories", [])}
+    roles = [c["name"] for c in palettes.get("Theme", {"colors": []})["colors"]]
     hs = str(data["styleManager"].get("htmlFontSize", "16px")).strip().lower()   # px | rem | % of the 16 px browser base
     html = float(re.sub(r"[^\d.]", "", hs)) * {"%": 0.16, "rem": 16.0}.get(re.sub(r"[\d.]", "", hs), 1.0)
 
@@ -642,41 +641,90 @@ def build_tokens(sheet: Sheet, problems: Problems) -> dict:
             problems.add(f"--{name} is not a px / fluid length in tokens.py")
         return p
 
-    # colours: brand + neutral palettes are primitives; theme roles are the semantic layer
-    primitives, alpha = {}, {}
+    def snapped(name: str, value: float) -> int:
+        s = round4(value)
+        if s != num(value):
+            WARNINGS.append(f"--{name} {num(value)} px → {s} px in Figma (4px grid)")
+        return s
 
-    def add_primitive(fig: str, value: str) -> bool:
+    def literal(value: str):
         c = parse_color(value)
         if c is None:
-            return False
-        if c[1] < 1:
-            alpha[fig] = [c[0], num(c[1])]
-        else:
-            primitives[fig] = c[0]
-        return True
+            return None
+        return c[0] if c[1] >= 1 else [c[0], num(c[1])]
 
-    for name, value in colours.items():
-        if name not in roles and not add_primitive(prim_name(name), value):
-            problems.add(f"--{name}: colour {value} is not hex / rgb()")
-    semantic = []
-    for name in roles:
-        fig, value = role_name(name), colours[name]
+    # colours: Brand + Neutrals palettes (raw values), Theme roles and component variables (aliases or literals)
+    brand, neutrals = {}, {}
+    for label, out in (("Brand", brand), ("Neutrals", neutrals)):
+        for c in palettes.get(label, {"colors": []})["colors"]:
+            lit = literal(c["light"])
+            if lit is None:
+                problems.add(f"--{c['name']}: colour {c['light']} is not hex / rgb()")
+            else:
+                out[c["name"]] = lit
+    primitives = set(brand) | set(neutrals)
+
+    def colour_entry(name: str, value: str, allowed: set[str], what: str) -> list | None:
         ref = single_var(value)
         if ref is not None:
-            target = ref[2:]
-            if target in roles or target not in colours:
-                problems.add(f"theme role --{name} must point at a brand / neutral colour, not {value}")
-                continue
-            semantic.append([fig, prim_name(target), semantic_scope(fig)])
-        elif add_primitive(f"role/{name}", value):
-            semantic.append([fig, f"role/{name}", semantic_scope(fig)])
-        else:
-            problems.add(f"theme role --{name}: colour {value} is not hex / rgb()")
-    sem_names = {s[0] for s in semantic}
+            if ref[2:] not in allowed:
+                problems.add(f"{what} --{name} must point at {'a brand / neutral colour' if what == 'theme role' else 'a colour token'}, not {value}")
+                return None
+            return [name, ref[2:], color_scope(name)]
+        lit = literal(value)
+        if lit is None:
+            problems.add(f"{what} --{name}: colour {value} is not hex / rgb()")
+            return None
+        return [name, lit, color_scope(name)]
 
-    # spacing, radius, grid
-    space = sorted({num(p) for n in variables if n.startswith("space-") and (p := px(n)) is not None})
-    radius = {n[len("radius-"):]: num(min(p, 999)) for n in variables if n.startswith("radius-") and (p := px(n)) is not None}
+    theme = [e for name in roles if (e := colour_entry(name, colours[name], primitives, "theme role"))]
+    colour_names = primitives | {e[0] for e in theme}
+    components = []
+    for v in data["variables"]:
+        if cat_name.get(v.get("category")) != "Components":
+            continue
+        ref = single_var(v["value"])
+        if (ref is None and literal(v["value"]) is None) or (ref is not None and ref[2:] not in colour_names):
+            continue                                   # not a colour component variable (radius, size …)
+        if (e := colour_entry(v["name"], v["value"], colour_names, "component variable")):
+            components.append(e)
+            colour_names.add(e[0])
+
+    # surfaces: [data-surface="x"] { background: var(--bg-…); color: var(--text-contrast); --token: value … }
+    surfaces: dict[str, dict] = {}
+    for conds, sels, decls in sheet.rules:
+        if len(sels) != 1 or not applies(conds, DESKTOP):
+            continue
+        m = SURFACE_SEL.fullmatch(sels[0])
+        if not m:
+            continue
+        s = surfaces.setdefault(m.group(2), {"fill": None, "dark": False, "tokens": []})
+        for name, value, _ in decls:
+            if name in ("background", "background-color"):
+                bm = re.match(r"var\(\s*--(bg-[\w-]+)", value.strip())
+                if bm:
+                    s["fill"] = bm.group(1)
+            elif name == "color":
+                s["dark"] = single_var(value) == "--text-contrast"
+            elif name.startswith("--") and name[2:] in colour_names:
+                if (e := colour_entry(name[2:], value, colour_names, f'[data-surface="{m.group(2)}"]')):
+                    s["tokens"] = [t for t in s["tokens"] if t[0] != e[0]] + [e]
+    for key, s in list(surfaces.items()):
+        if s["fill"] not in roles:
+            WARNINGS.append(f'[data-surface="{key}"] background {s["fill"] and "--" + s["fill"]} is not a theme colour role — surface skipped')
+            del surfaces[key]
+            continue
+        if not s["dark"]:
+            del s["dark"]
+        if not s["tokens"]:
+            del s["tokens"]
+
+    # spacing, radius, font sizes
+    space = {n: snapped(n, p) for n in variables if n.startswith("space-") and (p := px(n)) is not None}
+    radius = {n: (999 if p >= 999 else snapped(n, p)) for n in variables if n.startswith("radius-") and (p := px(n)) is not None}
+    text = {n: [num(d), num(mb)] for n in variables if re.fullmatch(r"text-(?:\d?x[sl]|[sml])", n)
+            and (d := px(n)) is not None and (mb := px(n, MOBILE)) is not None}
+
     # grid: the Container theme style — width --max-screen-width (border-box), side padding --container-padding;
     # 12 columns with --layout-gutter gaps inside it, centred in the DESKTOP frame
     screen, pad, gutter = px("max-screen-width"), px("container-padding"), px("layout-gutter")
@@ -693,12 +741,13 @@ def build_tokens(sheet: Sheet, problems: Problems) -> dict:
             whole = round(column)
         grid = {"page": DESKTOP, "columns": 12, "column": whole, "gutter": num(gutter),
                 "margin": num((DESKTOP - 12 * whole - 11 * gutter) / 2)}
-    grid_mobile = {"page": MOBILE, "columns": 4, "gutter": num(px("layout-gutter", MOBILE) or 16),
-                   "margin": num(px("container-padding", MOBILE) or 16)}
+    grid_mobile = {"page": MOBILE, "columns": 4,
+                   "gutter": snapped("layout-gutter @440", px("layout-gutter", MOBILE) or 16),
+                   "margin": snapped("container-padding @440", px("container-padding", MOBILE) or 16)}
 
     # fonts and type
-    fonts = {"heading": first_family(var_value("font-family-display")) or "Inter",
-             "body": first_family(var_value("font-family")) or "Inter"}
+    fonts = {"font-family": first_family(var_value("font-family")) or "Inter",
+             "font-family-display": first_family(var_value("font-family-display")) or "Inter"}
 
     def weight(name: str) -> str:
         try:
@@ -713,20 +762,16 @@ def build_tokens(sheet: Sheet, problems: Problems) -> dict:
 
     type_ = []
     for role, style, font, wvar, lsvar, extra, size_tok, lh_tok in TYPE_ROLES:
-        size, ratio = px(size_tok), float(var_value(lh_tok) or 0)
-        if size is None or not ratio:
+        ratio = float(var_value(lh_tok) or 0)
+        if size_tok not in text or not ratio:
             problems.add(f"type role {role}: --{size_tok} / --{lh_tok} missing in tokens.py")
             continue
-        entry = [style, font, weight(wvar), num(size), num(size * ratio), tracking(lsvar)]
-        ex = dict(extra)
-        ms = px(size_tok, MOBILE)
-        if ms is not None and num(ms) != num(size):
-            ex["mobile"] = [num(ms), num(ms * ratio)]
-        if ex:
-            entry.append(ex)
-        type_.append(entry)
+        d, mb = text[size_tok]
+        line = [round4(d * ratio), round4(mb * ratio)]
+        type_.append([style, FONT_VAR[font], weight(wvar), size_tok, line if line[0] != line[1] else line[0],
+                      tracking(lsvar), {**extra, "lineHeight": lh_tok}])
 
-    # effects, gradients
+    # effects, gradients: style names = token names
     effects, gradients = {}, {}
     for n, v in variables.items():
         m = re.fullmatch(r"(shadow|gradient)-([\w-]+)", n)
@@ -735,42 +780,24 @@ def build_tokens(sheet: Sheet, problems: Problems) -> dict:
         if m.group(1) == "shadow":
             layers = parse_shadow(v)
             if layers:
-                effects[style_name("Shadow", m.group(2))] = layers
+                effects[n] = layers
             else:
                 WARNINGS.append(f"--{n}: cannot read box-shadow “{v}” — not exported")
         else:
             g = parse_gradient(v)
             if g:
-                gradients[style_name("Gradient", m.group(2))] = g
+                gradients[n] = g
             else:
                 WARNINGS.append(f"--{n}: only linear-gradient(<angle>, <colour> <pos>%, …) is exported — skipped “{v}”")
 
-    # surfaces: [data-surface="x"] { background: var(--bg-…); color: var(--text-contrast) }
-    surfaces, dark = {}, {}
-    for conds, sels, decls in sheet.rules:
-        if len(sels) != 1 or not applies(conds, DESKTOP):
-            continue
-        m = SURFACE_SEL.fullmatch(sels[0])
-        if not m:
-            continue
-        key = m.group(2)
-        for name, value, _ in decls:
-            if name in ("background", "background-color"):
-                bm = re.match(r"var\(\s*--(bg-[\w-]+)", value.strip())
-                if bm:
-                    surfaces[key] = role_name(bm.group(1))
-            elif name == "color":
-                dark[key] = single_var(value) == "--text-contrast"
-    for key, token in surfaces.items():
-        if token not in sem_names:
-            WARNINGS.append(f'[data-surface="{key}"] uses {token}, which is not a theme colour role')
-
-    pad = px("layout-section-pad")
+    pad_y = px("layout-section-pad")
+    line_heights = {n: num(float(var_value(n))) for n in variables if n.startswith("line-height-")}
     return {
-        "fonts": fonts, "primitives": primitives, "alpha": alpha, "semantic": semantic, "space": space,
-        "radius": radius, "grid": grid, "gridMobile": grid_mobile, "type": type_,
-        "surfaces": surfaces, "darkSurfaces": [k for k in surfaces if dark.get(k)],
-        "section": {"padY": num(pad) if pad is not None else 64}, "effects": effects, "gradients": gradients,
+        "fonts": fonts, "brand": brand, "neutrals": neutrals, "theme": theme, "components": components,
+        "surfaces": surfaces, "space": space, "radius": radius, "text": text, "lineHeights": line_heights,
+        "grid": grid, "gridMobile": grid_mobile, "type": type_,
+        "section": {"padY": snapped("layout-section-pad", pad_y) if pad_y is not None else 64},
+        "effects": effects, "gradients": gradients,
     }
 
 
@@ -1096,12 +1123,15 @@ def main() -> int:
     print(f"wrote {OUT}")
     print(f"  {data['name']}: {len(data['pages'])} pages, {len(states)} states, {len(data['mobile'])} mobile screens, "
           f"{len(layouts)} layouts, {len(components)} components")
-    print(f"  tokens: {len(t['primitives'])} primitives + {len(t['alpha'])} alpha, {len(t['semantic'])} semantic, "
-          f"{len(t['type'])} text styles, {len(t['space'])} spaces, {len(t['effects'])} effects, {len(t['gradients'])} gradients, "
+    overrides = sum(len(s.get("tokens", [])) for s in t["surfaces"].values())
+    print(f"  tokens (Bricks names): {len(t['brand'])} brand + {len(t['neutrals'])} neutrals, {len(t['theme'])} theme roles, "
+          f"{len(t['components'])} component variables, {overrides} surface overrides, {len(t['space'])} space, "
+          f"{len(t['text'])} font sizes, {len(t['type'])} text styles, {len(t['effects'])} effects, {len(t['gradients'])} gradients, "
           f"surfaces {', '.join(t['surfaces'])}")
     print(f"  grid: {t['grid']}  mobile: margin {t['gridMobile']['margin']}, gutter {t['gridMobile']['gutter']}")
     fonts = ", ".join(f"{f['family']} {'/'.join(map(str, f['weights']))}" for f in data["fonts"])
-    print(f"  fonts: heading {t['fonts']['heading']}, body {t['fonts']['body']}" + (f"; @font-face: {fonts}" if fonts else ""))
+    print(f"  fonts: font-family-display {t['fonts']['font-family-display']}, font-family {t['fonts']['font-family']}"
+          + (f"; @font-face: {fonts}" if fonts else ""))
     print(f"  icons ({len(icon_keys)}): {', '.join(sorted(icon_keys)) or '—'}")
     for w in WARNINGS:
         print(f"  warning: {w}")
