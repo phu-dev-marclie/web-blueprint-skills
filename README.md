@@ -27,11 +27,11 @@ Script sẽ ghi đè skill trùng tên trong `~/.agents/skills/`. Riêng ở `~/
 
 Cập nhật: `git pull` rồi chạy lại script.
 
-## Danh sách skill (60)
+## Danh sách skill (59)
 
 | Nhóm | Skill | Nguồn / license |
 |---|---|---|
-| Quy trình riêng | `ux-wireframe`, `wireframe-content`, `bricks-bem-html`, `bricks-mcp`, `html-to-figma`, `gen-image-web`, `wordpress-blueprint`, `source-command-replace-wp` | Tác giả repo |
+| Quy trình riêng | `ux-wireframe`, `bricks-bem-html`, `bricks-mcp`, `html-to-figma`, `gen-image-web`, `wordpress-blueprint`, `source-command-replace-wp` | Tác giả repo |
 | Bricks Builder (45) | `bricks-start-here`, `bricks-components`, `bricks-design-systems`, `bricks-query-loops`, `bricks-element-schemas`, … mọi thư mục `bricks-*` còn lại | [codeerhq/bricks-skills](https://github.com/codeerhq/bricks-skills) v0.1.1, GPL-2.0 |
 | WordPress core | `wp-block-development`, `wp-block-themes`, `wp-plugin-development`, `wp-rest-api`, `wp-wpcli-and-ops` | [WordPress/agent-skills](https://github.com/WordPress/agent-skills), GPL-2.0-or-later |
 | Thiết kế UI | `impeccable` 4.8.0 | [pbakaus/impeccable](https://github.com/pbakaus/impeccable), Apache-2.0 |
@@ -56,7 +56,7 @@ Quy trình chuẩn của bộ này. Các skill có trigger trùng nhau đã đư
 
 | Tình huống | Dùng | Không dùng / ghi chú |
 |---|---|---|
-| Wireframe, sitemap, IA, content cả website | `ux-wireframe` | `wireframe-content` chỉ dùng khi cần một brief nội dung markdown riêng, không làm wireframe |
+| Wireframe, sitemap, IA, content cả website | `ux-wireframe` | |
 | HTML → Bricks | `bricks-bem-html` | Không dùng `bricks-html-css-to-bricks` / `bricks-figma-to-bricks`; quy trình không đi từ Figma sang Bricks |
 | Đặt tên class Bricks | `bricks-bem-html` (prefix `w-`, `references/class-system.md`) | Ưu tiên hơn `bricks-naming-conventions` và mọi quy ước khác, kể cả trên site đã có quy ước riêng |
 | Design tokens / biến Bricks | `bricks-bem-html` (`tokens.py` → Style Manager) | `bricks-design-systems` / `bricks-seed-design-system` chỉ để sửa trực tiếp trên site, theo tên token của `bricks-bem-html` |
