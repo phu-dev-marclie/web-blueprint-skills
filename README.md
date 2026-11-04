@@ -50,17 +50,18 @@ Chi tiết license nằm ở `THIRD_PARTY_NOTICES.md` và thư mục `licenses/`
 - `source-command-replace-wp`: viết cho Local WP trên Windows. Trước khi dùng, sửa `MYSQL=` (đường dẫn `mysql.exe`) và `PORT` cho hợp với máy của bạn.
 - `bricks-skills-update`: chỉ chạy được khi cài bản gốc `codeerhq/bricks-skills` vào `~/.bricks/skills/bricks-skills`. Muốn nhận bản Bricks mới nhất thì cài theo README của upstream.
 
-## Skill nào dùng khi nào (tránh chồng chéo)
+## Skill nào dùng khi nào
 
-Một số skill có trigger hoặc quy tắc trùng nhau. Quy ước của bộ này:
+Quy trình chuẩn của bộ này. Các skill có trigger trùng nhau đã được ghi rõ phạm vi trong `description`.
 
-| Tình huống | Dùng | Ghi chú |
+| Tình huống | Dùng | Không dùng / ghi chú |
 |---|---|---|
-| Wireframe / sitemap / content cả website | `ux-wireframe` | `wireframe-content` chỉ dùng khi cần brief nội dung dạng markdown để dán vào Figma |
-| Viết HTML/CSS sẽ dựng trong Bricks | `bricks-bem-html` (class prefix `w-`) | Chỉ dùng `bricks-naming-conventions` cho site đã có quy ước riêng: theo quy ước có sẵn, đừng ép prefix `w-` |
-| Figma → Bricks | `bricks-mcp` (đọc site + sinh section) + `bricks-bem-html` (class, components) | `bricks-figma-to-bricks` / `bricks-html-css-to-bricks` dùng khi site kết nối qua Bricks abilities |
+| Wireframe, sitemap, IA, content cả website | `ux-wireframe` | `wireframe-content` chỉ dùng khi cần một brief nội dung markdown riêng, không làm wireframe |
+| HTML → Bricks | `bricks-bem-html` | Không dùng `bricks-html-css-to-bricks` / `bricks-figma-to-bricks`; quy trình không đi từ Figma sang Bricks |
+| Đặt tên class Bricks | `bricks-bem-html` (prefix `w-`, `references/class-system.md`) | Ưu tiên hơn `bricks-naming-conventions` và mọi quy ước khác, kể cả trên site đã có quy ước riêng |
+| Design tokens / biến Bricks | `bricks-bem-html` (`tokens.py` → Style Manager) | `bricks-design-systems` / `bricks-seed-design-system` chỉ để sửa trực tiếp trên site, theo tên token của `bricks-bem-html` |
 | HTML → Figma | `html-to-figma` | |
-| Design tokens / biến Bricks | `bricks-bem-html` (`tokens.py` → Style Manager) | `bricks-design-systems` / `bricks-seed-design-system` dùng để sửa trực tiếp trên site |
-| Thiết kế, critique, polish UI | `impeccable` | Phase 7 của `ux-wireframe` có quy trình refine riêng; trong dự án wireframe thì theo `ux-wireframe` |
-| Content model, code tuỳ biến, SEO | `wordpress-blueprint` (ACF UI, FluentSnippets, Rank Math, không Gutenberg) | **Xung đột quy tắc:** `wp-plugin-development`, `wp-block-*`, `bricks-custom-elements`, `bricks-child-theme-patterns` hướng dẫn viết plugin, block hoặc child theme PHP. Trên site theo blueprint, chỉ dùng chúng khi thật sự cần custom element hoặc plugin |
-| Thao tác trực tiếp trên site | Đã cài Novamira → `novamira`; đã có Bricks abilities → `bricks-start-here`; đã có MCP Bricks → `bricks-mcp` | Mỗi việc chỉ đi qua một kênh |
+| Thiết kế, critique, polish UI | `impeccable` | Trong dự án wireframe, phase 7 của `ux-wireframe` quyết định |
+| Quản trị WordPress (wp-admin, plugin quen thuộc, thiết lập site) | `wordpress-blueprint` (ACF UI, FluentSnippets, Rank Math, không Gutenberg) | Đây là quy trình quản trị, không phải quy chuẩn viết code |
+| Viết code plugin, block, theme, REST, Bricks element | `wp-plugin-development`, `wp-block-development`, `wp-block-themes`, `wp-rest-api`, `bricks-custom-elements` | Theo chuẩn viết code của từng skill; `wordpress-blueprint` chỉ quyết định nơi đặt content model và snippet của site |
+| Kết nối, thao tác trên site | `novamira` | `bricks-mcp` chỉ khi gọi rõ `/bricks-mcp` |

@@ -1,6 +1,6 @@
 ---
 name: wordpress-blueprint
-description: "The owner's standards for building and running WordPress sites: where the content model, custom code and SEO live (ACF UI, FluentSnippets, Rank Math — never a custom site plugin or PHP registration), business information in one ACF Options Page, FAQs as an ACF post type + topic taxonomy queried by Bricks, SEO-friendly FAQ / blog setup, how blog posts are written (standard posts, classic WYSIWYG editor, no Gutenberg, no custom fields for the body), and how to migrate a site to these rules. Use for any WordPress work: adding or changing a CPT, taxonomy, options page, field, hook, snippet, SEO/schema, FAQ, business data, editor setup, blog content model, auditing a site, or migrating a site plugin / functions.php / acf-json / ACF-built posts / hand-made FAQ sections. Update it whenever the owner states a new WordPress rule."
+description: "The owner's admin workflow for setting up and running WordPress sites in wp-admin with familiar plugins: content model, site code and SEO in ACF UI, FluentSnippets and Rank Math (never a custom site plugin or PHP registration for the content model), business information in one ACF Options Page, FAQs as an ACF post type + topic taxonomy queried by Bricks, blog posts as standard posts in the classic editor (no Gutenberg), plugin setup routines, and migrating a site to these rules. Use when administering a WordPress site the owner's way: CPT, taxonomy, options page, field, snippet, SEO/schema, FAQ, business data, editor setup, blog content model, plugin setup, site audit, or migrating a site plugin / functions.php / acf-json. Not for writing plugin, block, theme or Bricks element code: that follows wp-plugin-development, wp-block-development, wp-block-themes, wp-rest-api and bricks-custom-elements. Update it whenever the owner states a new WordPress rule."
 ---
 
 # WordPress blueprint
@@ -9,6 +9,12 @@ The owner's standing requirements for every WordPress site. Owner's core rule: e
 **visible and editable in wp-admin** by the owner, without a developer — the content model is built in ACF's own UI,
 every piece of site-specific code is a FluentSnippets snippet, SEO is Rank Math, and blog posts are plain WordPress
 posts. No "core" / "site functionality" plugin written for the site, no registration in PHP.
+
+**Scope.** This is the owner's site-admin workflow: configuring a site through wp-admin and the familiar plugins
+(ACF, FluentSnippets, Rank Math, Bricks) and the routines for setting them up. Writing plugin, block, theme or Bricks
+custom-element code is a different job: it follows the coding skills (`wp-plugin-development`, `wp-block-development`,
+`wp-block-themes`, `wp-rest-api`, `bricks-custom-elements`) and their code standards. The rules here still decide
+where a site's own content model and small site snippets live.
 
 **Keeping this skill current:** when the owner states a new rule or preference for WordPress work, add it to the
 matching section here (or a new section) in the same task, and mirror the file to every skills folder that holds a

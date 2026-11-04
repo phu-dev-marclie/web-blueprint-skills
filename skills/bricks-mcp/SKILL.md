@@ -1,16 +1,12 @@
 ---
 name: bricks-mcp
 description: |
-  Kết nối Claude Code với WordPress Bricks Builder qua MCP. Đọc dữ liệu website (pages, elements, settings, fonts, breakpoints).
-  Chuyển đổi thiết kế Figma thành mã HTML/CSS/JS production-ready để paste vào Bricks Builder (HTML Element).
-  Tuân thủ BEM CSS, CSS Grid/Flexbox, Bricks Core Framework variables, responsive 4 breakpoints.
+  Kênh phụ: kết nối Claude Code với WordPress Bricks Builder qua MCP để đọc dữ liệu website (pages, elements, settings, fonts, breakpoints)
+  và sinh HTML/CSS/JS paste vào Bricks (HTML Element). Class theo hệ `w-` của bricks-bem-html.
 
-  Dùng skill này khi người dùng:
-  - Đưa link Figma và muốn tạo code cho Bricks Builder
-  - Nhắc đến "bricks", "design to bricks", "figma to bricks", "tạo section"
-  - Muốn đọc/kiểm tra dữ liệu website Bricks (pages, templates, settings)
-  - Yêu cầu tạo section/component HTML cho Bricks paste
-  - Nói "bricks-mcp", "/bricks-mcp"
+  Chỉ dùng khi người dùng gọi rõ "bricks-mcp", "/bricks-mcp" hoặc yêu cầu làm việc qua Bricks MCP.
+  Không dùng cho: kết nối/thao tác site thông thường (→ novamira), chuyển HTML sang Bricks (→ bricks-bem-html),
+  wireframe (→ ux-wireframe).
 argument-hint: "[figma-url]"
 license: MIT
 metadata:
@@ -24,10 +20,8 @@ Kết nối Claude Code với WordPress Bricks Builder. Đọc dữ liệu site,
 
 ## Khi nào kích hoạt
 
-- User đưa Figma URL + muốn tạo code cho Bricks
-- User nhắc "bricks", "design to bricks", "figma to bricks"
-- User muốn đọc dữ liệu website Bricks (pages, templates, fonts, settings)
-- User yêu cầu tạo section/component cho Bricks paste
+- User gọi rõ `bricks-mcp` / `/bricks-mcp` hoặc yêu cầu làm việc qua Bricks MCP
+- Kết nối site mặc định là `novamira`; HTML → Bricks mặc định là `bricks-bem-html`
 
 ---
 
@@ -96,9 +90,10 @@ Paste HTML Element (bên dưới) chỉ dùng cho embed một lần, không cầ
 
 ### Quy tắc BEM CSS
 
-- Block name: derive từ Figma section name (e.g. "Feature Section 94" → `.feature-why`)
-- Element: `__` separator (e.g. `.feature-why__card-title`)
-- Modifier: `--` separator (e.g. `.feature-why__row--three-col`)
+- Tên class theo hệ của `bricks-bem-html` (`references/class-system.md`), ưu tiên hơn mọi quy ước khác
+- Block name: `w-` + tên section (e.g. "Feature Section 94" → `.w-feature-why`)
+- Element: `__` separator (e.g. `.w-feature-why__card-title`)
+- Modifier: `--` separator (e.g. `.w-feature-why__row--three-col`)
 - Tất cả selectors phải bắt đầu bằng block name → tránh CSS conflict
 
 ### Quy tắc Layout

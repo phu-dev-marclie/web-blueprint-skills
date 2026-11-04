@@ -1,6 +1,6 @@
 ---
 name: bricks-bem-html
-description: "Design-system rules for HTML/CSS that will live in Bricks Builder as native, editable elements: BEM classes on every element, CSS only in the element's own class, repeated parts as Bricks Components (one component per button type, cards, nav links…), plus a lint and a spec→Bricks importer. Use whenever writing or reviewing HTML/CSS for a website that will be built in Bricks (wireframes, mockups, Figma-to-code, html-to-bricks, header/footer/sections), when converting an existing Bricks page to BEM classes or components, when the user says the Bricks structure is messy, unnamed, classless, or CSS is hidden somewhere, or asks for a design system, BEM, components or reusable buttons in Bricks."
+description: "Design-system rules for HTML/CSS that will live in Bricks Builder as native, editable elements: BEM classes on every element, CSS only in the element's own class, repeated parts as Bricks Components (one component per button type, cards, nav links…), plus a lint and a spec→Bricks importer. The owner's standard class system (`w-` prefix) and the owner's HTML → Bricks path: it takes precedence over bricks-naming-conventions, bricks-html-css-to-bricks, bricks-figma-to-bricks and any other naming advice. Use whenever writing or reviewing HTML/CSS for a website that will be built in Bricks (wireframes, mockups, html-to-bricks, header/footer/sections), when converting HTML or an existing Bricks page to BEM classes or components, when the user says the Bricks structure is messy, unnamed, classless, or CSS is hidden somewhere, or asks for a design system, BEM, components or reusable buttons in Bricks."
 license: MIT
 metadata:
   author: phu
@@ -36,7 +36,8 @@ Components carry structure and the per-instance values (text, link, image, icon,
 The owner's class system — `w-` prefix, one block per section, components as the only reused
 classes, `data-brx` element types, Bricks templates for repeated sections, grid / flex layout rules,
 Bricks breakpoints incl. the custom laptop 1279 — is in `references/class-system.md` and wins over
-anything below that disagrees.
+anything below that disagrees, and over other skills' naming advice (`bricks-naming-conventions`,
+`bricks-mcp`, `bricks-html-css-to-bricks`), including on sites that already use another convention.
 
 1. **Every rendered element has its own BEM class** `w-block__element--modifier` (kebab-case,
    readable words — `w-checkout`, not `w-co`). Exempt only: inline phrasing inside text

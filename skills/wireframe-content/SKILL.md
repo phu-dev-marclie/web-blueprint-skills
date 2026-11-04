@@ -1,6 +1,6 @@
 ---
 name: wireframe-content
-description: Generate wireframe-ready website content briefs in compact markdown format, and optionally render them as browser-previewable HTML wireframes using a 890-layout image library — pages organized by section with headings, cards, tags, and buttons that paste directly into Figma frames, or as full HTML pages ready to open in a browser. Use this skill whenever the user wants to plan website content for design, generate page-by-page copy for wireframes or mockups, build a content brief for a new website, write a sitemap with section-level content, organize site copy so a designer can lay it out in Figma, or generate an HTML wireframe / wireframe preview for a website. Triggers on phrases like "content for a website", "wireframe content", "Figma content", "website copy plan", "site sitemap", "page-by-page content", "landing page content brief", "build content for my Figma mockup", "HTML wireframe", "wireframe preview", "browser preview of my site structure", or any task that turns site information into structured per-page copy or a previewable wireframe. Also triggers when the user has a website concept and needs structured content before design, even if they don't say "wireframe" — if the goal is "design later in Figma" or "preview in a browser", apply this skill.
+description: Generate website content briefs in compact markdown format — pages organized by section with headings, cards, tags, and buttons that paste directly into Figma frames. Use this skill only when the user wants a standalone content brief or page-by-page copy plan without building a wireframe. Triggers on phrases like "content brief", "website copy plan", "page-by-page content", "landing page content brief", "Figma content". Not for wireframes, sitemaps / information architecture, HTML wireframe previews or prototypes — those always use ux-wireframe.
 ---
 
 # Wireframe Content Brief
@@ -28,6 +28,7 @@ Don't use this skill when:
 
 - The user wants finished marketing copy in long-form prose (use a draft-content skill)
 - The user wants only SEO meta or only one short section of microcopy
+- The user wants a wireframe, sitemap / information architecture, HTML wireframe preview or prototype — use `ux-wireframe` (the owner's only wireframe skill); its phase 4 writes the copy too
 - The user wants visual design recommendations — colors, fonts, spacing decisions (this skill is **content-first**: Phases A–D produce copy only; the optional Phase E produces structural HTML wireframes from a reference layout library, never a finished visual design)
 
 ---
